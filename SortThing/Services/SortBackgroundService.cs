@@ -79,7 +79,7 @@ namespace SortThing.Services
                     return;
                 }
 
-                if (!string.IsNullOrWhiteSpace(_globalState.JobName))
+                if (string.IsNullOrWhiteSpace(_globalState.JobName))
                 {
                     _appLifetime.StopApplication();
                     var report = await _jobRunner.RunJob(configPath, _globalState.JobName, _globalState.DryRun, stoppingToken);

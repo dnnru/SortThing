@@ -4,6 +4,7 @@ using MetadataExtractor.Formats.QuickTime;
 using SortThing.Abstractions;
 using SortThing.Models;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -82,7 +83,13 @@ namespace SortThing.Services
 
             if (!TryGetExifDirectory<ExifIfd0Directory>(filePath, out var directory))
             {
-                return false;
+                if (!TryGetExifDirectory<QuickTimeMetadataHeaderDirectory>(filePath, out var qtDir))
+                {
+                    return false;
+                }
+
+                camera = qtDir?.GetString(QuickTimeMetadataHeaderDirectory.TagModel)?.Trim();
+                return !string.IsNullOrWhiteSpace(camera);
             }
 
             camera = directory
@@ -119,7 +126,15 @@ namespace SortThing.Services
         private bool TryGetExifDirectory<T>(string filePath, out T directory)
                     where T : class
         {
-            var directories = ImageMetadataReader.ReadMetadata(filePath);
+            IReadOnlyList<MetadataExtractor.Directory> directories = null;
+            try
+            {
+                directories = ImageMetadataReader.ReadMetadata(filePath);
+            }
+            catch
+            {
+                // Ignore
+            }
 
             directory = directories
                 ?.OfType<T>()

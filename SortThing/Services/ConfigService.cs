@@ -7,7 +7,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Unicode;
 using System.Threading.Tasks;
 
 namespace SortThing.Services
@@ -46,6 +48,12 @@ namespace SortThing.Services
             }
         }
 
+        private JsonSerializerOptions JsonSerializerOptions => new JsonSerializerOptions
+        {
+            Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic),
+            WriteIndented = true
+        };
+
         public async Task GenerateSample()
         {
             var config = new SortConfig()
@@ -57,11 +65,12 @@ namespace SortThing.Services
                         Name = "Photos",
                         Operation = SortOperation.Move,
                         SourceDirectory = "D:\\Sync\\Camera\\",
-                        DestinationFile = "D:\\Sorted\\Photos\\{yyyy}\\{MM}\\{dd}\\{camera}\\{HH}{mm} - {filename}.{extension}",
+                        DestinationFile = $"D:\\Sorted\\Photos\\{PathTransformer.Year}\\{PathTransformer.Month}\\{PathTransformer.Day}\\{PathTransformer.Camera}\\{PathTransformer.Hour}{PathTransformer.Minute} - {PathTransformer.Filename}.{PathTransformer.Extension}",
                         NoExifDirectory = "D:\\Sorted\\NoExif\\Photos",
                         IncludeExtensions = new[] { "png", "jpg", "jpeg" },
                         ExcludeExtensions = Array.Empty<string>(),
-                        OverwriteAction =  OverwriteAction.Overwrite
+                        OverwriteAction =  OverwriteAction.Overwrite,
+                        UseTimestamp = false
                     },
 
                     new SortJob()
@@ -69,11 +78,12 @@ namespace SortThing.Services
                         Name = "Videos",
                         Operation = SortOperation.Move,
                         SourceDirectory = "D:\\Sync\\Camera\\",
-                        DestinationFile = "D:\\Sorted\\Videos\\{yyyy}\\{MM}\\{dd}\\{camera}\\{HH}{mm} - {filename}.{extension}",
+                        DestinationFile = $"D:\\Sorted\\Videos\\{PathTransformer.Year}\\{PathTransformer.Month}\\{PathTransformer.Day}\\{PathTransformer.Camera}\\{PathTransformer.Hour}{PathTransformer.Minute} - {PathTransformer.Filename}.{PathTransformer.Extension}",
                         NoExifDirectory = "D:\\Sorted\\NoExif\\Videos",
                         IncludeExtensions = new[] { "mp4", "avi", "m4v", "mov" },
                         ExcludeExtensions = Array.Empty<string>(),
-                        OverwriteAction = OverwriteAction.New
+                        OverwriteAction = OverwriteAction.New,
+                        UseTimestamp = false
                     },
 
                     new SortJob()
@@ -81,15 +91,16 @@ namespace SortThing.Services
                         Name = "Others",
                         Operation = SortOperation.Move,
                         SourceDirectory = "D:\\Sync\\Camera\\",
-                        DestinationFile = "D:\\Sorted\\Files\\{yyyy}\\{MM}\\{dd}\\{HH}{mm} - {filename}.{extension}",
+                        DestinationFile = $"D:\\Sorted\\Files\\{PathTransformer.Year}\\{PathTransformer.Month}\\{PathTransformer.Day}\\{PathTransformer.Hour}{PathTransformer.Minute} - {PathTransformer.Filename}.{PathTransformer.Extension}",
                         IncludeExtensions = new[] { "*" },
                         ExcludeExtensions = new[] { "png", "jpg", "jpeg", "mp4", "avi", "m4v", "mov" },
-                        OverwriteAction = OverwriteAction.Skip
+                        OverwriteAction = OverwriteAction.Skip,
+                        UseTimestamp = false
                     }
                 }
             };
 
-            var serialized = JsonSerializer.Serialize(config, new JsonSerializerOptions() { WriteIndented = true });
+            var serialized = JsonSerializer.Serialize(config, JsonSerializerOptions);
 
             try
             {
@@ -115,7 +126,7 @@ namespace SortThing.Services
             }
 
             var configString = await _fileSystem.ReadAllTextAsync(configPath);
-            return JsonSerializer.Deserialize<SortConfig>(configString) ?? new();
+            return JsonSerializer.Deserialize<SortConfig>(configString, JsonSerializerOptions) ?? new();
         }
 
         public async Task<SortConfig> GetSortConfig()
@@ -143,7 +154,7 @@ namespace SortThing.Services
                 try
                 {
                     var content = await _fileSystem.ReadAllTextAsync(file.FullName);
-                    var config = JsonSerializer.Deserialize<SortConfig>(content);
+                    var config = JsonSerializer.Deserialize<SortConfig>(content, JsonSerializerOptions);
                     if (config is not null)
                     {
                         _logger.LogInformation("Found config file: {configPath}.", file.FullName);

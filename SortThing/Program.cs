@@ -67,6 +67,7 @@ namespace SortThing
                     .ConfigureServices(services =>
                     {
                         services.AddScoped<IMetadataReader, MetadataReader>();
+                        services.AddScoped<IFilenameTimestampReader, FilenameTimestampReader>();
                         services.AddScoped<IJobRunner, JobRunner>();
                         services.AddSingleton<IJobWatcher, JobWatcher>();
                         services.AddScoped<IPathTransformer, PathTransformer>();

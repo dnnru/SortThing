@@ -33,17 +33,20 @@ namespace SortThing.Services
         private readonly IFileSystem _fileSystem;
         private readonly ILogger<JobRunner> _logger;
         private readonly IMetadataReader _metaDataReader;
+        private readonly IFilenameTimestampReader _filenameTimestampReader;
         private readonly IPathTransformer _pathTransformer;
         private readonly IConfigService _configService;
 
         public JobRunner(IFileSystem fileSystem,
-            IMetadataReader metaDataReader, 
+            IMetadataReader metaDataReader,
+            IFilenameTimestampReader filenameTimestampReader,
             IPathTransformer pathTransformer,
             IConfigService configService,
             ILogger<JobRunner> logger)
         {
             _fileSystem = fileSystem;
             _metaDataReader = metaDataReader;
+            _filenameTimestampReader = filenameTimestampReader;
             _pathTransformer = pathTransformer;
             _configService = configService;
             _logger = logger;
@@ -155,6 +158,7 @@ namespace SortThing.Services
             try
             {
                 var result = _metaDataReader.TryGetExifData(file);
+                var timestampResult = job.UseTimestamp ? _filenameTimestampReader.GetFilenameTimestamp(file) : null;
 
                 if (result.IsSuccess && result.Value is not null)
                 {
@@ -164,6 +168,11 @@ namespace SortThing.Services
                         job.DestinationFile,
                         result.Value.DateTaken,
                         result.Value.CameraModel);
+                }
+                else if(timestampResult is { IsSuccess: true } && timestampResult.Value != DateTime.MinValue)
+                {
+                    exifFound = true;
+                    destinationFile = _pathTransformer.TransformPath(file, job.DestinationFile, timestampResult.Value);
                 }
                 else
                 {

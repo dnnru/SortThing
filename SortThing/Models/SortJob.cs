@@ -28,5 +28,7 @@ namespace SortThing.Models
         public OverwriteAction OverwriteAction { get; init; }
 
         public string SourceDirectory { get; init; } = string.Empty;
+
+        public bool UseTimestamp { get; init; } = false;
     }
 }

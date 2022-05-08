@@ -56,15 +56,17 @@ namespace SortThing.Services
                 throw new ArgumentNullException(nameof(destinationFile));
             }
 
-            return destinationFile
-                .Replace(Year, dateTaken.Year.ToString().PadLeft(4, '0'))
-                .Replace(Month, dateTaken.Month.ToString().PadLeft(2, '0'))
-                .Replace(Day, dateTaken.Day.ToString().PadLeft(2, '0'))
-                .Replace(Hour, dateTaken.Hour.ToString().PadLeft(2, '0'))
-                .Replace(Minute, dateTaken.Minute.ToString().PadLeft(2, '0'))
-                .Replace(Camera, camera?.Trim())
-                .Replace(Filename, Path.GetFileNameWithoutExtension(sourceFile))
-                .Replace(Extension, Path.GetExtension(sourceFile)[1..]);
+            destinationFile = string.IsNullOrWhiteSpace(camera)
+                                  ? destinationFile.Replace(Camera, "").Replace($"{Path.DirectorySeparatorChar}{Path.DirectorySeparatorChar}", $"{Path.DirectorySeparatorChar}") 
+                                  : destinationFile.Replace(Camera, camera.Trim());
+
+            return destinationFile.Replace(Year, dateTaken.Year.ToString().PadLeft(4, '0'))
+                                  .Replace(Month, dateTaken.Month.ToString().PadLeft(2, '0'))
+                                  .Replace(Day, dateTaken.Day.ToString().PadLeft(2, '0'))
+                                  .Replace(Hour, dateTaken.Hour.ToString().PadLeft(2, '0'))
+                                  .Replace(Minute, dateTaken.Minute.ToString().PadLeft(2, '0'))
+                                  .Replace(Filename, Path.GetFileNameWithoutExtension(sourceFile))
+                                  .Replace(Extension, Path.GetExtension(sourceFile)[1..]);
         }
 
         public string TransformPath(string sourceFile, string destinationFile)

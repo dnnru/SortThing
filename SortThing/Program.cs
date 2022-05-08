@@ -31,13 +31,7 @@ namespace SortThing
                 }
             });
             rootCommand.AddOption(configOption);
-
-            var generateOption = new Option<bool>(
-                new[] { "--generate-config", "-g" },
-                () => false,
-                "Generates a sample config file in the current directory.");
-            rootCommand.AddOption(generateOption);
-
+            
             var jobOption = new Option<string>(
                 new[] { "--job-name", "-j" },
                 () => string.Empty,
@@ -55,6 +49,12 @@ namespace SortThing
                 () => false,
                 "If true, no file operations will actually be executed.");
             rootCommand.AddOption(dryRunOption);
+            
+            var generateOption = new Option<bool>(
+                                                  new[] { "--generate-config", "-g" },
+                                                  () => false,
+                                                  "Generates a sample config file in the current directory.");
+            rootCommand.AddOption(generateOption);
 
             rootCommand.SetHandler(async (string configPath, string jobName, bool watch, bool dryRun, bool generateSample) =>
             {

@@ -1,13 +1,15 @@
 ﻿using MetadataExtractor;
+using MetadataExtractor.Formats.Avi;
 using MetadataExtractor.Formats.Exif;
 using MetadataExtractor.Formats.QuickTime;
 using SortThing.Abstractions;
 using SortThing.Models;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
+using Directory = MetadataExtractor.Directory;
 
 namespace SortThing.Services
 {
@@ -19,6 +21,8 @@ namespace SortThing.Services
 
     public class MetadataReader : IMetadataReader
     {
+        private readonly ConcurrentDictionary<string, IReadOnlyList<Directory>> _directoriesDictionary = new ConcurrentDictionary<string, IReadOnlyList<Directory>>();
+
         /// <summary>
         /// Formats an EXIF DateTime to a format that can be parsed in .NET.
         /// </summary>
@@ -105,12 +109,22 @@ namespace SortThing.Services
 
             if (!TryGetExifDirectory<ExifSubIfdDirectory>(filePath, out var directory))
             {
-                if (!TryGetExifDirectory<QuickTimeMovieHeaderDirectory>(filePath, out var qtDir))
+                if (TryGetExifDirectory<QuickTimeMovieHeaderDirectory>(filePath, out var movieDir))
                 {
-                    return false;
+                    return movieDir.TryGetDateTime(QuickTimeMovieHeaderDirectory.TagCreated, out dateTaken);
                 }
 
-                return qtDir.TryGetDateTime(QuickTimeMovieHeaderDirectory.TagCreated, out dateTaken);
+                if (TryGetExifDirectory<QuickTimeMetadataHeaderDirectory>(filePath, out var metadataDir))
+                {
+                    return metadataDir.TryGetDateTime(QuickTimeMetadataHeaderDirectory.TagCreationDate, out dateTaken);
+                }
+
+                if (TryGetExifDirectory<AviDirectory>(filePath, out var aviDir))
+                {
+                    return aviDir.TryGetDateTime(AviDirectory.TagDateTimeOriginal, out dateTaken);
+                }
+
+                return false;
             }
 
             if (directory.TryGetDateTime(ExifDirectoryBase.TagDateTimeOriginal, out dateTaken) ||
@@ -126,7 +140,13 @@ namespace SortThing.Services
         private bool TryGetExifDirectory<T>(string filePath, out T directory)
                     where T : class
         {
-            IReadOnlyList<MetadataExtractor.Directory> directories = null;
+            directory = _directoriesDictionary.GetOrAdd(filePath, ReadMetadata)?.OfType<T>().FirstOrDefault();
+            return directory is not null;
+        }
+
+        private static IReadOnlyList<Directory> ReadMetadata(string filePath)
+        {
+            IReadOnlyList<Directory> directories = null;
             try
             {
                 directories = ImageMetadataReader.ReadMetadata(filePath);
@@ -136,11 +156,7 @@ namespace SortThing.Services
                 // Ignore
             }
 
-            directory = directories
-                ?.OfType<T>()
-                ?.FirstOrDefault();
-
-            return directory is not null;
+            return directories;
         }
     }
 }

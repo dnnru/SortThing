@@ -5,17 +5,13 @@
 using System;
 using System.IO;
 using System.Linq;
-using SortThing.Abstractions;
+using SortThing.Contracts;
+using SortThing.Models;
 
 #endregion
 
 namespace SortThing.Services
 {
-    public interface IFilenameTimestampReader
-    {
-        Result<DateTime> GetFilenameTimestamp(string filePath);
-    }
-
     public class FilenameTimestampReader : IFilenameTimestampReader
     {
         public Result<DateTime> GetFilenameTimestamp(string filePath)

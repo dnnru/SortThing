@@ -1,11 +1,22 @@
-﻿namespace SortThing.Abstractions
+﻿namespace SortThing.Models
 {
     public class Result
     {
+        public Result(bool isSuccess, string error = null)
+        {
+            IsSuccess = isSuccess;
+            Error = error;
+        }
+
+        public bool IsSuccess { get; init; }
+
+        public string Error { get; init; }
+
         public static Result Ok()
         {
             return new Result(true);
         }
+
         public static Result Fail(string error)
         {
             return new Result(false, error);
@@ -20,16 +31,6 @@
         {
             return new Result<T>(false, default, error);
         }
-
-        public Result(bool isSuccess, string error = null)
-        {
-            IsSuccess = isSuccess;
-            Error = error;
-        }
-
-        public bool IsSuccess { get; init; }
-
-        public string Error { get; init; }
     }
 
     public class Result<T>
@@ -47,5 +48,4 @@
 
         public T Value { get; init; }
     }
-
 }

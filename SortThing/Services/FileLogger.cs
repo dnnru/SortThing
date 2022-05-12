@@ -1,26 +1,27 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+﻿#region
+
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
+using Microsoft.Extensions.Logging;
+using Timer = System.Timers.Timer;
+
+#endregion
 
 namespace SortThing.Services
 {
     public class FileLogger : ILogger
     {
-        private static readonly ConcurrentQueue<string> _logQueue = new();
-        private static readonly ConcurrentStack<string> _scopeStack = new();
-        private static readonly SemaphoreSlim _writeLock = new(1, 1);
+        private static readonly ConcurrentQueue<string> LogQueue = new ConcurrentQueue<string>();
+        private static readonly ConcurrentStack<string> ScopeStack = new ConcurrentStack<string>();
+        private static readonly SemaphoreSlim WriteLock = new SemaphoreSlim(1, 1);
         private readonly string _categoryName;
-        private readonly System.Timers.Timer _sinkTimer = new(5000) { AutoReset = false };
+        private readonly Timer _sinkTimer = new Timer(5000) { AutoReset = false };
 
         public FileLogger(string categoryName)
         {
@@ -32,7 +33,7 @@ namespace SortThing.Services
 
         public IDisposable BeginScope<TState>(TState state)
         {
-            _scopeStack.Push(state.ToString());
+            ScopeStack.Push(state.ToString());
             return new NoopDisposable();
         }
 
@@ -55,6 +56,7 @@ namespace SortThing.Services
                 default:
                     break;
             }
+
             return false;
         }
 
@@ -62,12 +64,10 @@ namespace SortThing.Services
         {
             try
             {
-                var scopeStack = _scopeStack.Any() ?
-                    new string[] { _scopeStack.FirstOrDefault(), _scopeStack.LastOrDefault() } :
-                    Array.Empty<string>();
+                var scopeStack = ScopeStack.Any() ? new[] { ScopeStack.FirstOrDefault(), ScopeStack.LastOrDefault() } : Array.Empty<string>();
 
                 var message = FormatLogEntry(logLevel, _categoryName, state?.ToString(), exception, scopeStack);
-                _logQueue.Enqueue(message);
+                LogQueue.Enqueue(message);
                 _sinkTimer.Start();
             }
             catch (Exception ex)
@@ -78,13 +78,13 @@ namespace SortThing.Services
 
         private async Task CheckLogFileExists()
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(LogPath));
+            Directory.CreateDirectory(Path.GetDirectoryName(LogPath) ?? throw new InvalidOperationException());
             if (!File.Exists(LogPath))
             {
                 File.Create(LogPath).Close();
                 if (OperatingSystem.IsLinux())
                 {
-                    await Process.Start("sudo", $"chmod 775 {LogPath}").WaitForExitAsync();
+                    await (Process.Start("sudo", $"chmod 775 {LogPath}")?.WaitForExitAsync()!).ConfigureAwait(false);
                 }
             }
         }
@@ -100,28 +100,24 @@ namespace SortThing.Services
                 ex = ex.InnerException;
             }
 
-            return $"[{logLevel}]\t" +
-                $"{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff}\t" +
-                (
-                    scopeStack.Any() ?
-                        $"[{string.Join(" - ", scopeStack)} - {categoryName}]\t" :
-                        $"[{categoryName}]\t"
-                ) +
-                $"Message: {state}\t" +
-                $"Exception: {exMessage}{Environment.NewLine}";
+            return $"[{logLevel}]\t"
+                 + $"{DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss.fff}\t"
+                 + (scopeStack.Any() ? $"[{string.Join(" - ", scopeStack)} - {categoryName}]\t" : $"[{categoryName}]\t")
+                 + $"Message: {state}\t"
+                 + $"Exception: {exMessage}{Environment.NewLine}";
         }
 
-        private async void SinkTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        private async void SinkTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
             try
             {
-                await _writeLock.WaitAsync();
+                await WriteLock.WaitAsync().ConfigureAwait(false);
 
-                await CheckLogFileExists();
+                await CheckLogFileExists().ConfigureAwait(false);
 
                 var message = string.Empty;
 
-                while (_logQueue.TryDequeue(out var entry))
+                while (LogQueue.TryDequeue(out var entry))
                 {
                     message += entry;
                 }
@@ -134,14 +130,15 @@ namespace SortThing.Services
             }
             finally
             {
-                _writeLock.Release();
+                WriteLock.Release();
             }
         }
+
         private class NoopDisposable : IDisposable
         {
             public void Dispose()
             {
-                _scopeStack.TryPop(out _);
+                ScopeStack.TryPop(out _);
             }
         }
     }

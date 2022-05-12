@@ -1,8 +1,8 @@
 {
-  "profiles": {
-    "SortThing": {
-      "commandName": "Project",
-      "commandLineArgs": "-c \"Z:\\Apps\\SortThing.json\" -d -w"
+    "profiles": {
+        "SortThing": {
+            "commandName": "Project",
+            "commandLineArgs": "-c \"Z:\\Apps\\SortThing.json\" -d -w"
+        }
     }
-  }
 }

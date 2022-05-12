@@ -1,36 +1,55 @@
 {
-  "Jobs": [
-    {
-      "Name": "Photos",
-      "Operation": "Move",
-      "SourceDirectory": "D:\\Sync\\Camera\\",
-      "DestinationFile": "D:\\Sorted\\Photos\\{year}\\{month}\\{day}\\{camera}\\{hour}{minute} - {filename}.{extension}",
-      "NoExifDirectory": "D:\\Sorted\\NoExif\\Photos",
-      "IncludeExtensions": [ "png", "jpg", "jpeg" ],
-      "ExcludeExtensions": [],
-      "OverwriteAction": "Overwrite",
-      "UseTimestamp": false
-    },
-    {
-      "Name": "Videos",
-      "Operation": "Move",
-      "SourceDirectory": "D:\\Sync\\Camera\\",
-      "DestinationFile": "D:\\Sorted\\Videos\\{year}\\{month}\\{day}\\{camera}\\{hour}{minute} - {filename}.{extension}",
-      "NoExifDirectory": "D:\\Sorted\\NoExif\\Videos",
-      "IncludeExtensions": [ "mp4", "avi", "m4v", "mov" ],
-      "ExcludeExtensions": [],
-      "OverwriteAction": "New",
-      "UseTimestamp": false
-    },
-    {
-      "Name": "Others",
-      "Operation": "Move",
-      "SourceDirectory": "D:\\Sync\\Camera\\",
-      "DestinationFile": "D:\\Sorted\\Files\\{year}\\{month}\\{day}\\{hour}{minute} - {filename}.{extension}",
-      "IncludeExtensions": [ "*" ],
-      "ExcludeExtensions": [ "png", "jpg", "jpeg", "mp4", "avi", "m4v", "mov" ],
-      "OverwriteAction": "Skip",
-      "UseTimestamp": false
-    }
-  ]
+    "Jobs": [
+        {
+            "Name": "Photos",
+            "Operation": "Move",
+            "SourceDirectory": "D:\\Sync\\Camera\\",
+            "DestinationFile": "D:\\Sorted\\Photos\\{year}\\{month}\\{day}\\{camera}\\{hour}{minute} - {filename}.{extension}",
+            "NoExifDirectory": "D:\\Sorted\\NoExif\\Photos",
+            "IncludeExtensions": [
+                "png",
+                "jpg",
+                "jpeg"
+            ],
+            "ExcludeExtensions": [],
+            "OverwriteAction": "Overwrite",
+            "UseTimestamp": false
+        },
+        {
+            "Name": "Videos",
+            "Operation": "Move",
+            "SourceDirectory": "D:\\Sync\\Camera\\",
+            "DestinationFile": "D:\\Sorted\\Videos\\{year}\\{month}\\{day}\\{camera}\\{hour}{minute} - {filename}.{extension}",
+            "NoExifDirectory": "D:\\Sorted\\NoExif\\Videos",
+            "IncludeExtensions": [
+                "mp4",
+                "avi",
+                "m4v",
+                "mov"
+            ],
+            "ExcludeExtensions": [],
+            "OverwriteAction": "New",
+            "UseTimestamp": false
+        },
+        {
+            "Name": "Others",
+            "Operation": "Move",
+            "SourceDirectory": "D:\\Sync\\Camera\\",
+            "DestinationFile": "D:\\Sorted\\Files\\{year}\\{month}\\{day}\\{hour}{minute} - {filename}.{extension}",
+            "IncludeExtensions": [
+                "*"
+            ],
+            "ExcludeExtensions": [
+                "png",
+                "jpg",
+                "jpeg",
+                "mp4",
+                "avi",
+                "m4v",
+                "mov"
+            ],
+            "OverwriteAction": "Skip",
+            "UseTimestamp": false
+        }
+    ]
 }

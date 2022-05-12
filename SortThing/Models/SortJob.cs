@@ -1,6 +1,10 @@
-﻿using SortThing.Enums;
+﻿#region
+
 using System;
 using System.Text.Json.Serialization;
+using SortThing.Enums;
+
+#endregion
 
 namespace SortThing.Models
 {
@@ -16,13 +20,13 @@ namespace SortThing.Models
         public string Name { get; init; } = string.Empty;
 
         /// <summary>
-        /// The operation to perform on the original files.
+        ///     The operation to perform on the original files.
         /// </summary>
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public SortOperation Operation { get; init; }
 
         /// <summary>
-        /// The action to take when destination file already exists.
+        ///     The action to take when destination file already exists.
         /// </summary>
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public OverwriteAction OverwriteAction { get; init; }

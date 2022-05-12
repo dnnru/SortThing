@@ -1,9 +1,9 @@
-﻿using SortThing.Enums;
-using System;
+﻿#region
+
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SortThing.Enums;
+
+#endregion
 
 namespace SortThing.Models
 {
@@ -11,7 +11,7 @@ namespace SortThing.Models
     {
         public string JobName { get; init; } = string.Empty;
         public SortOperation Operation { get; init; }
-        public List<OperationResult> Results { get; init; } = new();
+        public List<OperationResult> Results { get; init; } = new List<OperationResult>();
         public bool DryRun { get; internal set; }
     }
 }

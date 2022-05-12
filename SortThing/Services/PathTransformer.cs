@@ -1,44 +1,39 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.IO;
+using SortThing.Contracts;
+using SortThing.Utilities;
+
+#endregion
 
 namespace SortThing.Services
 {
-    public interface IPathTransformer
-    {
-        string TransformPath(string sourcePath, string destinationPath);
-        string TransformPath(string sourcePath, string destinationPath, DateTime dateTaken, string camera);
-        string GetUniqueFilePath(string destinationFile);
-        string TransformPath(string sourcePath, string destinationPath, DateTime fileCreated);
-    }
-
     public class PathTransformer : IPathTransformer
     {
-        public const string Camera = "{camera}";
-        public const string Day = "{day}";
-        public const string Extension = "{extension}";
-        public const string Filename = "{filename}";
-        public const string Hour = "{hour}";
-        public const string Minute = "{minute}";
-        public const string Month = "{month}";
-        public const string Year = "{year}";
+        public const string CAMERA = "{camera}";
+        public const string DAY = "{day}";
+        public const string EXTENSION = "{extension}";
+        public const string FILENAME = "{filename}";
+        public const string HOUR = "{hour}";
+        public const string MINUTE = "{minute}";
+        public const string MONTH = "{month}";
+        public const string YEAR = "{year}";
 
         public string GetUniqueFilePath(string destinationFile)
         {
             var uniquePath = destinationFile;
 
-            for (var i = 0; true; i++)
+            for (var i = 0;; i++)
             {
                 if (!File.Exists(uniquePath))
                 {
                     break;
                 }
 
-                var filename = 
-                    Path.GetFileNameWithoutExtension(destinationFile) +
-                    $"_{i}" +
-                    Path.GetExtension(destinationFile);
+                var filename = Path.GetFileNameWithoutExtension(destinationFile) + $"_{i}" + Path.GetExtension(destinationFile);
 
-                uniquePath = Path.Combine(Path.GetDirectoryName(destinationFile), filename);
+                uniquePath = Path.Combine(Path.GetDirectoryName(destinationFile) ?? throw new InvalidOperationException(), filename);
             }
 
             return uniquePath;
@@ -57,16 +52,17 @@ namespace SortThing.Services
             }
 
             destinationFile = string.IsNullOrWhiteSpace(camera)
-                                  ? destinationFile.Replace(Camera, "").Replace($"{Path.DirectorySeparatorChar}{Path.DirectorySeparatorChar}", $"{Path.DirectorySeparatorChar}") 
-                                  : destinationFile.Replace(Camera, camera.Trim());
+                                  ? destinationFile.ReplaceEx(CAMERA, "", StringComparison.OrdinalIgnoreCase)
+                                  : destinationFile.ReplaceEx(CAMERA, camera.Trim(), StringComparison.OrdinalIgnoreCase);
 
-            return destinationFile.Replace(Year, dateTaken.Year.ToString().PadLeft(4, '0'))
-                                  .Replace(Month, dateTaken.Month.ToString().PadLeft(2, '0'))
-                                  .Replace(Day, dateTaken.Day.ToString().PadLeft(2, '0'))
-                                  .Replace(Hour, dateTaken.Hour.ToString().PadLeft(2, '0'))
-                                  .Replace(Minute, dateTaken.Minute.ToString().PadLeft(2, '0'))
-                                  .Replace(Filename, Path.GetFileNameWithoutExtension(sourceFile))
-                                  .Replace(Extension, Path.GetExtension(sourceFile)[1..]);
+            return destinationFile.ReplaceEx(YEAR, dateTaken.Year.ToString().PadLeft(4, '0'), StringComparison.OrdinalIgnoreCase)
+                                  .ReplaceEx(MONTH, dateTaken.Month.ToString().PadLeft(2, '0'), StringComparison.OrdinalIgnoreCase)
+                                  .ReplaceEx(DAY, dateTaken.Day.ToString().PadLeft(2, '0'), StringComparison.OrdinalIgnoreCase)
+                                  .ReplaceEx(HOUR, dateTaken.Hour.ToString().PadLeft(2, '0'), StringComparison.OrdinalIgnoreCase)
+                                  .ReplaceEx(MINUTE, dateTaken.Minute.ToString().PadLeft(2, '0'), StringComparison.OrdinalIgnoreCase)
+                                  .ReplaceEx(FILENAME, Path.GetFileNameWithoutExtension(sourceFile), StringComparison.OrdinalIgnoreCase)
+                                  .ReplaceEx(EXTENSION, Path.GetExtension(sourceFile)[1..], StringComparison.OrdinalIgnoreCase)
+                                  .ToValidFileName();
         }
 
         public string TransformPath(string sourceFile, string destinationFile)
@@ -81,9 +77,7 @@ namespace SortThing.Services
                 throw new ArgumentNullException(nameof(destinationFile));
             }
 
-            return destinationFile
-                .Replace(Filename, Path.GetFileNameWithoutExtension(sourceFile))
-                .Replace(Extension, Path.GetExtension(sourceFile)[1..]);
+            return destinationFile.Replace(FILENAME, Path.GetFileNameWithoutExtension(sourceFile)).Replace(EXTENSION, Path.GetExtension(sourceFile)[1..]);
         }
 
         public string TransformPath(string sourcePath, string destinationPath, DateTime fileCreated)

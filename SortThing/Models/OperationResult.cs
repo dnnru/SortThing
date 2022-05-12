@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace SortThing.Models
+﻿namespace SortThing.Models
 {
     public class OperationResult
     {
@@ -14,6 +8,5 @@ namespace SortThing.Models
         public bool FoundExifData { get; init; }
         public string PreOperationPath { get; init; } = string.Empty;
         public string PostOperationPath { get; init; } = string.Empty;
-
     }
 }

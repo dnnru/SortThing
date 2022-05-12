@@ -1,15 +1,15 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿#region
+
+using System.CommandLine;
+using System.IO;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using SortThing.Contracts;
 using SortThing.Services;
-using System;
-using System.CommandLine;
-using System.CommandLine.Invocation;
-using System.CommandLine.Parsing;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+
+#endregion
 
 namespace SortThing
 {
@@ -19,84 +19,75 @@ namespace SortThing
         {
             var rootCommand = new RootCommand("Sort your photos into folders based on metadata.");
 
-            var configOption = new Option<string>(
-                new[] { "--config-path", "-c" },
-                "The full path to the SortThing configuration file.  Use -g to generate a sample config file in the current directory.");
+            var configOption = new Option<string>(new[] { "--config-path", "-c" },
+                                                  "The full path to the SortThing configuration file.  Use -g to generate a sample config file in the current directory.");
 
             configOption.AddValidator(option =>
-            {
-                if (!File.Exists(option.GetValueOrDefault()?.ToString()))
-                {
-                    option.ErrorMessage = "Config file could not be found at the given path.";
-                }
-            });
+                                      {
+                                          if (!File.Exists(option.GetValueOrDefault()?.ToString()))
+                                          {
+                                              option.ErrorMessage = "Config file could not be found at the given path.";
+                                          }
+                                      });
             rootCommand.AddOption(configOption);
-            
-            var jobOption = new Option<string>(
-                new[] { "--job-name", "-j" },
-                () => string.Empty,
-                "If specified, will only run the named job from the config, then exit.");
+
+            var jobOption = new Option<string>(new[] { "--job-name", "-j" }, () => string.Empty, "If specified, will only run the named job from the config, then exit.");
             rootCommand.AddOption(jobOption);
 
-            var watchOption = new Option<bool>(
-                new[] { "--watch", "-w" },
-                () => false,
-                "If false, will run sort jobs immediately, then exit.  If true, will run jobs, then block and monitor for changes in each job's source folder.");
+            var watchOption = new Option<bool>(new[] { "--watch", "-w" },
+                                               () => false,
+                                               "If false, will run sort jobs immediately, then exit.  If true, will run jobs, then block and monitor for changes in each job's source folder.");
             rootCommand.AddOption(watchOption);
 
-            var dryRunOption = new Option<bool>(
-                new[] { "--dry-run", "-d" },
-                () => false,
-                "If true, no file operations will actually be executed.");
+            var dryRunOption = new Option<bool>(new[] { "--dry-run", "-d" }, () => false, "If true, no file operations will actually be executed.");
             rootCommand.AddOption(dryRunOption);
-            
-            var generateOption = new Option<bool>(
-                                                  new[] { "--generate-config", "-g" },
-                                                  () => false,
-                                                  "Generates a sample config file in the current directory.");
+
+            var generateOption = new Option<bool>(new[] { "--generate-config", "-g" }, () => false, "Generates a sample config file in the current directory.");
             rootCommand.AddOption(generateOption);
 
             rootCommand.SetHandler(async (string configPath, string jobName, bool watch, bool dryRun, bool generateSample) =>
-            {
-                using var host = Host.CreateDefaultBuilder(args)
-                    .UseWindowsService(options =>
-                    {
-                        options.ServiceName = "SortThing";
-                    })
-                    .UseConsoleLifetime()
-                    .ConfigureServices(services =>
-                    {
-                        services.AddScoped<IMetadataReader, MetadataReader>();
-                        services.AddScoped<IFilenameTimestampReader, FilenameTimestampReader>();
-                        services.AddScoped<IJobRunner, JobRunner>();
-                        services.AddSingleton<IJobWatcher, JobWatcher>();
-                        services.AddScoped<IPathTransformer, PathTransformer>();
-                        services.AddScoped<IFileSystem, FileSystem>();
-                        services.AddScoped<IReportWriter, ReportWriter>();
-                        services.AddScoped<IConfigService, ConfigService>();
-                        services.AddSingleton<ISystemTime, SystemTime>();
-                        services.AddSingleton<IGlobalState>(new GlobalState()
-                        {
-                            ConfigPath = configPath,
-                            DryRun = dryRun,
-                            JobName = jobName,
-                            Watch = watch,
-                            GenerateSample = generateSample
-                        });
-                        services.AddHostedService<SortBackgroundService>();
-                    })
-                    .ConfigureLogging(builder =>
-                    {
-                        builder.ClearProviders();
-                        builder.AddConsole();
-                        builder.AddProvider(new FileLoggerProvider());
-                    })
-                    .Build();
-                
-                await host.RunAsync();
-            }, configOption, jobOption, watchOption, dryRunOption, generateOption);
+                                   {
+                                       using var host = Host.CreateDefaultBuilder(args)
+                                                            .UseWindowsService(options => { options.ServiceName = "SortThing"; })
+                                                            .UseConsoleLifetime()
+                                                            .ConfigureServices(services =>
+                                                                               {
+                                                                                   services.AddScoped<IMetadataReader, MetadataReader>();
+                                                                                   services.AddScoped<IFilenameTimestampReader, FilenameTimestampReader>();
+                                                                                   services.AddScoped<IJobRunner, JobRunner>();
+                                                                                   services.AddSingleton<IJobWatcher, JobWatcher>();
+                                                                                   services.AddScoped<IPathTransformer, PathTransformer>();
+                                                                                   services.AddScoped<IFileSystem, FileSystem>();
+                                                                                   services.AddScoped<IReportWriter, ReportWriter>();
+                                                                                   services.AddScoped<IConfigService, ConfigService>();
+                                                                                   services.AddSingleton<ISystemTime, SystemTime>();
+                                                                                   services.AddSingleton<IGlobalState>(new GlobalState()
+                                                                                                                       {
+                                                                                                                           ConfigPath = configPath,
+                                                                                                                           DryRun = dryRun,
+                                                                                                                           JobName = jobName,
+                                                                                                                           Watch = watch,
+                                                                                                                           GenerateSample = generateSample
+                                                                                                                       });
+                                                                                   services.AddHostedService<SortBackgroundService>();
+                                                                               })
+                                                            .ConfigureLogging(builder =>
+                                                                              {
+                                                                                  builder.ClearProviders();
+                                                                                  builder.AddConsole();
+                                                                                  builder.AddProvider(new FileLoggerProvider());
+                                                                              })
+                                                            .Build();
 
-            return await rootCommand.InvokeAsync(args);
+                                       await host.RunAsync().ConfigureAwait(false);
+                                   },
+                                   configOption,
+                                   jobOption,
+                                   watchOption,
+                                   dryRunOption,
+                                   generateOption);
+
+            return await rootCommand.InvokeAsync(args).ConfigureAwait(false);
         }
     }
 }

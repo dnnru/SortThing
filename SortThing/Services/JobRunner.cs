@@ -1,6 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
-using SortThing.Enums;
-using SortThing.Models;
+﻿#region
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,41 +7,40 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using SortThing.Contracts;
+using SortThing.Enums;
+using SortThing.Models;
+
+#endregion
 
 namespace SortThing.Services
 {
-    public interface IJobRunner
-    {
-        Task<JobReport> RunJob(SortJob job, bool dryRun, CancellationToken cancelToken);
-
-        Task<JobReport> RunJob(string configPath, string jobName, bool dryRun, CancellationToken cancelToken);
-
-        Task<List<JobReport>> RunJobs(string configPath, bool dryRun, CancellationToken cancelToken);
-    }
-
     public class JobRunner : IJobRunner
     {
-        private static readonly SemaphoreSlim _runLock = new(1, 1);
-        private readonly EnumerationOptions _enumOptions = new()
-        {
-            AttributesToSkip = FileAttributes.ReparsePoint | FileAttributes.Hidden | FileAttributes.System,
-            RecurseSubdirectories = true,
-            MatchCasing = MatchCasing.PlatformDefault
-        };
+        private static readonly SemaphoreSlim RunLock = new SemaphoreSlim(1, 1);
+        private readonly IConfigService _configService;
 
+        private readonly EnumerationOptions _enumOptions = new EnumerationOptions
+                                                           {
+                                                               AttributesToSkip =
+                                                                   FileAttributes.ReparsePoint | FileAttributes.Hidden | FileAttributes.System,
+                                                               RecurseSubdirectories = true,
+                                                               MatchCasing = MatchCasing.PlatformDefault
+                                                           };
+
+        private readonly IFilenameTimestampReader _filenameTimestampReader;
         private readonly IFileSystem _fileSystem;
         private readonly ILogger<JobRunner> _logger;
         private readonly IMetadataReader _metaDataReader;
-        private readonly IFilenameTimestampReader _filenameTimestampReader;
         private readonly IPathTransformer _pathTransformer;
-        private readonly IConfigService _configService;
 
         public JobRunner(IFileSystem fileSystem,
-            IMetadataReader metaDataReader,
-            IFilenameTimestampReader filenameTimestampReader,
-            IPathTransformer pathTransformer,
-            IConfigService configService,
-            ILogger<JobRunner> logger)
+                         IMetadataReader metaDataReader,
+                         IFilenameTimestampReader filenameTimestampReader,
+                         IPathTransformer pathTransformer,
+                         IConfigService configService,
+                         ILogger<JobRunner> logger)
         {
             _fileSystem = fileSystem;
             _metaDataReader = metaDataReader;
@@ -55,15 +53,15 @@ namespace SortThing.Services
         public async Task<JobReport> RunJob(SortJob job, bool dryRun, CancellationToken cancelToken)
         {
             var jobReport = new JobReport()
-            {
-                JobName = job.Name,
-                Operation = job.Operation,
-                DryRun = dryRun
-            };
+                            {
+                                JobName = job.Name,
+                                Operation = job.Operation,
+                                DryRun = dryRun
+                            };
 
             try
             {
-                await _runLock.WaitAsync(cancelToken);
+                await RunLock.WaitAsync(cancelToken).ConfigureAwait(false);
 
                 _logger.LogInformation("Starting job run: {job}", JsonSerializer.Serialize(job));
 
@@ -73,15 +71,15 @@ namespace SortThing.Services
                 {
                     if (cancelToken.IsCancellationRequested)
                     {
-                        _logger.LogInformation("Job run cancelled.");
+                        _logger.LogInformation("Job run cancelled");
                         break;
                     }
 
                     var extension = job.IncludeExtensions[extIndex];
 
                     var files = _fileSystem.GetFiles(job.SourceDirectory, $"*.{extension.Replace(".", "")}", _enumOptions)
-                        .Where(file => !job.ExcludeExtensions.Any(ext => ext.Equals(Path.GetExtension(file)[1..], StringComparison.OrdinalIgnoreCase)))
-                        .ToArray();
+                                           .Where(file => !job.ExcludeExtensions.Any(ext => ext.Equals(Path.GetExtension(file)[1..], StringComparison.OrdinalIgnoreCase)))
+                                           .ToArray();
 
                     fileList.AddRange(files);
                 }
@@ -90,26 +88,27 @@ namespace SortThing.Services
                 {
                     if (cancelToken.IsCancellationRequested)
                     {
-                        _logger.LogInformation("Job run cancelled.");
+                        _logger.LogInformation("Job run cancelled");
                         break;
                     }
 
                     var file = fileList[fileIndex];
 
+                    // ReSharper disable once UnusedVariable
                     var progress = (double)fileIndex / fileList.Count * 100;
-                    _logger.LogInformation("Processing file {index} out of {total}.", fileIndex + 1, fileList.Count);
+                    _logger.LogInformation("Processing file {index} out of {total}", fileIndex + 1, fileList.Count);
 
-                    var result = await PerformFileOperation(job, dryRun, file);
+                    var result = await PerformFileOperation(job, dryRun, file).ConfigureAwait(false);
                     jobReport.Results.Add(result);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while running job.");
+                _logger.LogError(ex, "Error while running job");
             }
             finally
             {
-                _runLock.Release();
+                RunLock.Release();
             }
 
             return jobReport;
@@ -117,32 +116,31 @@ namespace SortThing.Services
 
         public async Task<JobReport> RunJob(string configPath, string jobName, bool dryRun, CancellationToken cancelToken)
         {
-            var config = await _configService.GetConfig(configPath);
-            var job = config.Jobs?.FirstOrDefault(x =>
-                x.Name?.Equals(jobName, StringComparison.OrdinalIgnoreCase) ?? false);
+            var config = await _configService.GetConfig(configPath).ConfigureAwait(false);
+            var job = config.Jobs?.FirstOrDefault(x => x.Name?.Equals(jobName, StringComparison.OrdinalIgnoreCase) ?? false);
 
             if (job is null)
             {
-                _logger.LogError("Job name {jobName} not found in config.", jobName);
+                _logger.LogError("Job name {jobName} not found in config", jobName);
                 return new JobReport()
-                {
-                    DryRun = dryRun,
-                    JobName = jobName,
-                    Operation = SortOperation.Unknown
-                };
+                       {
+                           DryRun = dryRun,
+                           JobName = jobName,
+                           Operation = SortOperation.Unknown
+                       };
             }
 
-            return await RunJob(job, dryRun, cancelToken);
+            return await RunJob(job, dryRun, cancelToken).ConfigureAwait(false);
         }
 
         public async Task<List<JobReport>> RunJobs(string configPath, bool dryRun, CancellationToken cancelToken)
         {
-            var config = await _configService.GetConfig(configPath);
+            var config = await _configService.GetConfig(configPath).ConfigureAwait(false);
             var reports = new List<JobReport>();
 
             foreach (var job in config.Jobs)
             {
-                var report = await RunJob(job, dryRun, cancelToken);
+                var report = await RunJob(job, dryRun, cancelToken).ConfigureAwait(false);
                 reports.Add(report);
             }
 
@@ -163,37 +161,30 @@ namespace SortThing.Services
                 if (result.IsSuccess && result.Value is not null)
                 {
                     exifFound = true;
-                    destinationFile = _pathTransformer.TransformPath(
-                        file,
-                        job.DestinationFile,
-                        result.Value.DateTaken,
-                        result.Value.CameraModel);
+                    destinationFile = _pathTransformer.TransformPath(file, job.DestinationFile, result.Value.DateTaken, result.Value.CameraModel);
                 }
-                else if(timestampResult is { IsSuccess: true } && timestampResult.Value != DateTime.MinValue)
+                else if (timestampResult is { IsSuccess: true } && timestampResult.Value != DateTime.MinValue)
                 {
                     exifFound = true;
                     destinationFile = _pathTransformer.TransformPath(file, job.DestinationFile, timestampResult.Value);
                 }
                 else
                 {
-                    exifFound = false;
                     var noExifPath = Path.Combine(job.NoExifDirectory, Path.GetFileName(file));
                     destinationFile = _pathTransformer.GetUniqueFilePath(noExifPath);
                 }
 
                 if (dryRun)
                 {
-                    _logger.LogInformation("Dry run. Skipping file operation.  Source: {file}.  Destination: {destinationFile}.",
-                        file,
-                        destinationFile);
+                    _logger.LogInformation("Dry run - Skipping file operation Source: {file}.  Destination: {destinationFile}", file, destinationFile);
 
                     operationResult = new OperationResult()
-                    {
-                        FoundExifData = exifFound,
-                        PostOperationPath = destinationFile,
-                        WasSkipped = true,
-                        PreOperationPath = file,
-                    };
+                                      {
+                                          FoundExifData = exifFound,
+                                          PostOperationPath = destinationFile,
+                                          WasSkipped = true,
+                                          PreOperationPath = file
+                                      };
 
                     return Task.FromResult(operationResult);
                 }
@@ -202,25 +193,22 @@ namespace SortThing.Services
                 {
                     _logger.LogWarning("Destination file exists.  Skipping.  Destination file: {destinationFile}", destinationFile);
                     operationResult = new OperationResult()
-                    {
-                        FoundExifData = exifFound,
-                        WasSkipped = true,
-                        PostOperationPath = destinationFile,
-                        PreOperationPath = file
-                    };
+                                      {
+                                          FoundExifData = exifFound,
+                                          WasSkipped = true,
+                                          PostOperationPath = destinationFile,
+                                          PreOperationPath = file
+                                      };
                     return Task.FromResult(operationResult);
                 }
 
                 if (_fileSystem.FileExists(destinationFile) && job.OverwriteAction == OverwriteAction.New)
                 {
-                    _logger.LogWarning("Destination file exists. Creating unique file name.");
+                    _logger.LogWarning("Destination file exists. Creating unique file name");
                     destinationFile = _pathTransformer.GetUniqueFilePath(destinationFile);
                 }
 
-                _logger.LogInformation("Starting file operation: {jobOperation}.  Source: {file}.  Destination: {destinationFile}.",
-                    job.Operation,
-                    file,
-                    destinationFile);
+                _logger.LogInformation("Starting file operation: {jobOperation} Source: {file}  Destination: {destinationFile}", job.Operation, file, destinationFile);
 
                 var dirName = Path.GetDirectoryName(destinationFile);
                 if (dirName is null)
@@ -238,27 +226,29 @@ namespace SortThing.Services
                     case SortOperation.Copy:
                         _fileSystem.CopyFile(file, destinationFile, true);
                         break;
-                    default:
+                    case SortOperation.Unknown:
                         break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
                 }
 
                 operationResult = new OperationResult()
-                {
-                    FoundExifData = exifFound,
-                    PostOperationPath = destinationFile,
-                    PreOperationPath = file
-                };
+                                  {
+                                      FoundExifData = exifFound,
+                                      PostOperationPath = destinationFile,
+                                      PreOperationPath = file
+                                  };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error while running job.");
 
                 operationResult = new OperationResult()
-                {
-                    FoundExifData = exifFound,
-                    PostOperationPath = destinationFile,
-                    PreOperationPath = file
-                };
+                                  {
+                                      FoundExifData = exifFound,
+                                      PostOperationPath = destinationFile,
+                                      PreOperationPath = file
+                                  };
             }
 
             return Task.FromResult(operationResult);

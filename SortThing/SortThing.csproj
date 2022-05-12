@@ -1,37 +1,37 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
-    <Platforms>AnyCPU;x86;x64</Platforms>
-    <ApplicationIcon>Assets\SortIcon.ico</ApplicationIcon>
-    <PackageIcon>SortIcon.png</PackageIcon>
-  </PropertyGroup>
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net6.0</TargetFramework>
+        <Platforms>AnyCPU;x86;x64</Platforms>
+        <ApplicationIcon>Assets\SortIcon.ico</ApplicationIcon>
+        <PackageIcon>SortIcon.png</PackageIcon>
+    </PropertyGroup>
 
-  <ItemGroup>
-    <Content Include="Assets\SortIcon.ico" />
-  </ItemGroup>
+    <ItemGroup>
+        <Content Include="Assets\SortIcon.ico" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <None Include="..\.editorconfig" Link=".editorconfig" />
-  </ItemGroup>
+    <ItemGroup>
+        <None Include="..\.editorconfig" Link=".editorconfig" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="MetadataExtractor" Version="2.7.2" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="6.0.0" />
-    <PackageReference Include="System.CommandLine" Version="2.0.0-beta3.22114.1" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="MetadataExtractor" Version="2.7.2" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="6.0.0" />
+        <PackageReference Include="System.CommandLine" Version="2.0.0-beta3.22114.1" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <None Update="Assets\SortIcon.png">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-    <None Update="example-config.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+    <ItemGroup>
+        <None Update="Assets\SortIcon.png">
+            <Pack>True</Pack>
+            <PackagePath>\</PackagePath>
+        </None>
+        <None Update="example-config.json">
+            <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
 
 </Project>

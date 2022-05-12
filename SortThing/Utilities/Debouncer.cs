@@ -1,33 +1,32 @@
-﻿using System;
+﻿#region
+
+using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Timers;
-using Timer = System.Timers.Timer;
+
+#endregion
 
 namespace SortThing.Utilities
 {
     public static class Debouncer
     {
-        private static readonly ConcurrentDictionary<object, Timer> _timers = new();
+        private static readonly ConcurrentDictionary<object, Timer> Timers = new ConcurrentDictionary<object, Timer>();
 
         public static void Debounce(object key, TimeSpan wait, Action action)
         {
-            if (_timers.TryRemove(key, out var timer))
+            if (Timers.TryRemove(key, out var timer))
             {
                 timer.Stop();
                 timer.Dispose();
             }
 
             timer = new Timer(wait.TotalMilliseconds)
-            { 
-                AutoReset = false
-            };
+                    {
+                        AutoReset = false
+                    };
 
             timer.Elapsed += (s, e) => action();
-            _timers.TryAdd(key, timer);
+            Timers.TryAdd(key, timer);
             timer.Start();
         }
     }

@@ -1,30 +1,29 @@
-﻿using MetadataExtractor;
-using MetadataExtractor.Formats.Avi;
-using MetadataExtractor.Formats.Exif;
-using MetadataExtractor.Formats.QuickTime;
-using SortThing.Abstractions;
-using SortThing.Models;
+﻿#region
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using MetadataExtractor;
+using MetadataExtractor.Formats.Avi;
+using MetadataExtractor.Formats.Exif;
+using MetadataExtractor.Formats.QuickTime;
+using SortThing.Contracts;
+using SortThing.Models;
+using SortThing.Utilities;
 using Directory = MetadataExtractor.Directory;
+
+#endregion
 
 namespace SortThing.Services
 {
-    public interface IMetadataReader
-    {
-        Result<DateTime> ParseExifDateTime(string exifDateTime);
-        Result<ExifData> TryGetExifData(string filePath);
-    }
-
     public class MetadataReader : IMetadataReader
     {
         private readonly ConcurrentDictionary<string, IReadOnlyList<Directory>> _directoriesDictionary = new ConcurrentDictionary<string, IReadOnlyList<Directory>>();
 
         /// <summary>
-        /// Formats an EXIF DateTime to a format that can be parsed in .NET.
+        ///     Formats an EXIF DateTime to a format that can be parsed in .NET.
         /// </summary>
         /// <param name="exifDateTime"></param>
         /// <returns></returns>
@@ -40,9 +39,7 @@ namespace SortThing.Services
                 return Result.Fail<DateTime>($"Parameter {nameof(exifDateTime)} appears to be invalid.");
             }
 
-            var dateArray = exifDateTime
-                .Split(" ", StringSplitOptions.RemoveEmptyEntries)
-                .Apply(split => split[0] = split[0].Replace(':', '-'));
+            var dateArray = exifDateTime.Split(" ", StringSplitOptions.RemoveEmptyEntries).Apply(split => split[0] = split[0].Replace(':', '-'));
 
             if (!DateTime.TryParse(string.Join(' ', dateArray), out var dateTaken))
             {
@@ -51,7 +48,6 @@ namespace SortThing.Services
 
             return Result.Ok(dateTaken);
         }
-
 
         public Result<ExifData> TryGetExifData(string filePath)
         {
@@ -70,10 +66,10 @@ namespace SortThing.Services
                 TryGetCameraModel(filePath, out var camera);
 
                 return Result.Ok(new ExifData()
-                {
-                    DateTaken = dateTaken,
-                    CameraModel = camera?.Trim()
-                });
+                                 {
+                                     DateTaken = dateTaken,
+                                     CameraModel = camera?.Trim()
+                                 });
             }
             catch
             {
@@ -81,6 +77,7 @@ namespace SortThing.Services
             }
         }
 
+        // ReSharper disable once UnusedMethodReturnValue.Local
         private bool TryGetCameraModel(string filePath, out string camera)
         {
             camera = string.Empty;
@@ -96,9 +93,7 @@ namespace SortThing.Services
                 return !string.IsNullOrWhiteSpace(camera);
             }
 
-            camera = directory
-                ?.GetString(ExifDirectoryBase.TagModel)
-                ?.Trim();
+            camera = directory?.GetString(ExifDirectoryBase.TagModel)?.Trim();
 
             return !string.IsNullOrWhiteSpace(camera);
         }
@@ -127,9 +122,9 @@ namespace SortThing.Services
                 return false;
             }
 
-            if (directory.TryGetDateTime(ExifDirectoryBase.TagDateTimeOriginal, out dateTaken) ||
-                directory.TryGetDateTime(ExifDirectoryBase.TagDateTimeDigitized, out dateTaken) ||
-                directory.TryGetDateTime(ExifDirectoryBase.TagDateTime, out dateTaken))
+            if (directory.TryGetDateTime(ExifDirectoryBase.TagDateTimeOriginal, out dateTaken)
+             || directory.TryGetDateTime(ExifDirectoryBase.TagDateTimeDigitized, out dateTaken)
+             || directory.TryGetDateTime(ExifDirectoryBase.TagDateTime, out dateTaken))
             {
                 return true;
             }
@@ -137,8 +132,7 @@ namespace SortThing.Services
             return false;
         }
 
-        private bool TryGetExifDirectory<T>(string filePath, out T directory)
-                    where T : class
+        private bool TryGetExifDirectory<T>(string filePath, out T directory) where T : class
         {
             directory = _directoriesDictionary.GetOrAdd(filePath, ReadMetadata)?.OfType<T>().FirstOrDefault();
             return directory is not null;

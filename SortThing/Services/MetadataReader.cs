@@ -41,12 +41,7 @@ namespace SortThing.Services
 
             var dateArray = exifDateTime.Split(" ", StringSplitOptions.RemoveEmptyEntries).Apply(split => split[0] = split[0].Replace(':', '-'));
 
-            if (!DateTime.TryParse(string.Join(' ', dateArray), out var dateTaken))
-            {
-                return Result.Fail<DateTime>("Unable to parse DateTime metadata value.");
-            }
-
-            return Result.Ok(dateTaken);
+            return !DateTime.TryParse(string.Join(' ', dateArray), out var dateTaken) ? Result.Fail<DateTime>("Unable to parse DateTime metadata value.") : Result.Ok(dateTaken);
         }
 
         public Result<ExifData> TryGetExifData(string filePath)
@@ -64,17 +59,39 @@ namespace SortThing.Services
                 }
 
                 TryGetCameraModel(filePath, out var camera);
+                TryGetLocation(filePath, out var location);
 
-                return Result.Ok(new ExifData()
+                return Result.Ok(new ExifData
                                  {
                                      DateTaken = dateTaken,
-                                     CameraModel = camera?.Trim()
+                                     CameraModel = camera?.Trim(),
+                                     Location = location
                                  });
             }
             catch
             {
                 return Result.Fail<ExifData>("Error while reading metadata.");
             }
+        }
+
+        // ReSharper disable once UnusedMethodReturnValue.Local
+        private bool TryGetLocation(string filePath, out (double Latitude, double Longitude)? location)
+        {
+            location = null;
+            if (!TryGetExifDirectory<GpsDirectory>(filePath, out var gpsDirectory))
+            {
+                return false;
+            }
+
+            var geoLocation = gpsDirectory?.GetGeoLocation();
+
+            if (geoLocation == null)
+            {
+                return false;
+            }
+
+            location = (geoLocation.Latitude, geoLocation.Longitude);
+            return true;
         }
 
         // ReSharper disable once UnusedMethodReturnValue.Local
@@ -114,22 +131,12 @@ namespace SortThing.Services
                     return metadataDir.TryGetDateTime(QuickTimeMetadataHeaderDirectory.TagCreationDate, out dateTaken);
                 }
 
-                if (TryGetExifDirectory<AviDirectory>(filePath, out var aviDir))
-                {
-                    return aviDir.TryGetDateTime(AviDirectory.TagDateTimeOriginal, out dateTaken);
-                }
-
-                return false;
+                return TryGetExifDirectory<AviDirectory>(filePath, out var aviDir) && aviDir.TryGetDateTime(AviDirectory.TagDateTimeOriginal, out dateTaken);
             }
 
-            if (directory.TryGetDateTime(ExifDirectoryBase.TagDateTimeOriginal, out dateTaken)
-             || directory.TryGetDateTime(ExifDirectoryBase.TagDateTimeDigitized, out dateTaken)
-             || directory.TryGetDateTime(ExifDirectoryBase.TagDateTime, out dateTaken))
-            {
-                return true;
-            }
-
-            return false;
+            return directory.TryGetDateTime(ExifDirectoryBase.TagDateTimeOriginal, out dateTaken)
+                || directory.TryGetDateTime(ExifDirectoryBase.TagDateTimeDigitized, out dateTaken)
+                || directory.TryGetDateTime(ExifDirectoryBase.TagDateTime, out dateTaken);
         }
 
         private bool TryGetExifDirectory<T>(string filePath, out T directory) where T : class

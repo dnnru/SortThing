@@ -2,6 +2,7 @@
 
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using SortThing.Contracts;
 
@@ -36,9 +37,14 @@ namespace SortThing.Services
             return File.Exists(path);
         }
 
-        public string[] GetFiles(string path, string searchPattern, EnumerationOptions enumOptions)
+        public IEnumerable<string> GetFiles(string path, string searchPattern, EnumerationOptions enumOptions)
         {
-            return Directory.GetFiles(path, searchPattern, enumOptions);
+            return Directory.EnumerateFiles(path, searchPattern, enumOptions);
+        }
+        
+        public IEnumerable<string> GetFiles(string path, IEnumerable<string> searchPatterns, EnumerationOptions enumOptions)
+        {
+            return searchPatterns.SelectMany(searchPattern => GetFiles(path, searchPattern, enumOptions));
         }
 
         public void MoveFile(string sourceFile, string destinationFile, bool overwrite)

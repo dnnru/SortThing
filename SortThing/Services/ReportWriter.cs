@@ -45,7 +45,7 @@ namespace SortThing.Services
 
         private string GetLogPath()
         {
-            var logPath = Path.Combine(Path.GetTempPath(), "SortThing", $"JobReport_{_systemTime.Now:yyyy-MM-dd HH.mm.ss.fff}.log");
+            var logPath = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath) ?? throw new InvalidOperationException(), "Logs", $"JobReport_{_systemTime.Now:yyyy-MM-dd HH.mm.ss.fff}.log");
             _fileSystem.CreateDirectory(Path.GetDirectoryName(logPath));
             return logPath;
         }

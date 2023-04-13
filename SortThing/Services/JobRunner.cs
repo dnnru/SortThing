@@ -8,9 +8,11 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using ShellProgressBar;
 using SortThing.Contracts;
 using SortThing.Enums;
 using SortThing.Models;
+using SortThing.Utilities;
 
 #endregion
 
@@ -58,56 +60,65 @@ namespace SortThing.Services
                                 Operation = job.Operation,
                                 DryRun = dryRun
                             };
+            
+            ProgressBar progressBar = null;
 
             try
             {
                 await RunLock.WaitAsync(cancelToken).ConfigureAwait(false);
 
                 _logger.LogInformation("Starting job run: {job}", JsonSerializer.Serialize(job));
-
+                Console.WriteLine($"{Environment.NewLine}Starting job run: {job.Name}");
+                
                 var fileList = new List<string>();
 
-                for (var extIndex = 0; extIndex < job.IncludeExtensions.Length; extIndex++)
+                for (var extIndex = 0; extIndex < job.IncludeExtensionsExpanded.Length; extIndex++)
                 {
                     if (cancelToken.IsCancellationRequested)
                     {
                         _logger.LogInformation("Job run cancelled");
+                        Console.WriteLine("Job run cancelled");
                         break;
                     }
 
-                    var extension = job.IncludeExtensions[extIndex];
+                    var extension = job.IncludeExtensionsExpanded[extIndex];
 
                     var files = _fileSystem.GetFiles(job.SourceDirectory, $"*.{extension.Replace(".", "")}", _enumOptions)
-                                           .Where(file => !job.ExcludeExtensions.Any(ext => ext.Equals(Path.GetExtension(file)[1..], StringComparison.OrdinalIgnoreCase)))
+                                           .Where(file => !job.ExcludeExtensionsExpanded.Any(ext => ext.Equals(Path.GetExtension(file)[1..], StringComparison.OrdinalIgnoreCase)))
                                            .ToArray();
 
                     fileList.AddRange(files);
                 }
-
+                
+                progressBar = ProgressBarHelper.CreateProgressBar(fileList.Count, $"Running job '{job.Name}'");
+                IProgress<OperationResult> progress = progressBar.AsProgress<OperationResult>(e => $"Processed file [{Path.GetFileName(e.PreOperationPath)}]. Skipped: {e.WasSkipped}, had error: {e.HadError}");
+                
                 for (var fileIndex = 0; fileIndex < fileList.Count; fileIndex++)
                 {
                     if (cancelToken.IsCancellationRequested)
                     {
                         _logger.LogInformation("Job run cancelled");
+                        progressBar.WriteErrorLine("Job run cancelled");
                         break;
                     }
 
                     var file = fileList[fileIndex];
 
-                    // ReSharper disable once UnusedVariable
-                    var progress = (double)fileIndex / fileList.Count * 100;
-                    _logger.LogInformation("Processing file {index} out of {total}", fileIndex + 1, fileList.Count);
+                    _logger.LogInformation("[{progress}%] Processing file {index} out of {total}", (float)fileIndex / fileList.Count * 100, fileIndex + 1, fileList.Count);
 
                     var result = await PerformFileOperation(job, dryRun, file).ConfigureAwait(false);
                     jobReport.Results.Add(result);
+                    progress.Report(result);
                 }
             }
             catch (Exception ex)
             {
+                progressBar?.WriteErrorLine(ex.Message);
                 _logger.LogError(ex, "Error while running job");
             }
             finally
             {
+                progressBar?.Dispose();
                 RunLock.Release();
             }
 
@@ -247,7 +258,8 @@ namespace SortThing.Services
                                   {
                                       FoundExifData = exifFound,
                                       PostOperationPath = destinationFile,
-                                      PreOperationPath = file
+                                      PreOperationPath = file,
+                                      HadError = true
                                   };
             }
 

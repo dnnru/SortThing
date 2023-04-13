@@ -93,7 +93,7 @@ namespace SortThing.Services
                 // Ignore
             }
 
-            if (TryParseFilenameTimestampDateTime(timestamp, out DateTime dateTime) && dateTime != DateTime.MinValue)
+            if (TryParseFilenameTimestampDateTime(timestamp, out DateTime dateTime) && dateTime != default)
             {
                 dateTaken = dateTime;
             }
@@ -106,7 +106,7 @@ namespace SortThing.Services
         {
             if (string.IsNullOrWhiteSpace(timestamp) || timestamp.Length < 14 || !timestamp.All(char.IsDigit))
             {
-                dateTaken = DateTime.MinValue;
+                dateTaken = default;
                 return false;
             }
 
@@ -123,7 +123,7 @@ namespace SortThing.Services
             }
             catch
             {
-                dateTaken = DateTime.MinValue;
+                dateTaken = default;
                 return false;
             }
 

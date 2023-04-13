@@ -1,13 +1,16 @@
 ﻿#region
 
-using System.CommandLine;
-using System.IO;
-using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Events;
+using Serilog.Exceptions;
 using SortThing.Contracts;
 using SortThing.Services;
+using System.CommandLine;
+using System.IO;
+using System.Threading.Tasks;
 
 #endregion
 
@@ -17,6 +20,22 @@ namespace SortThing
     {
         public static async Task<int> Main(string[] args)
         {
+            Log.Logger = new LoggerConfiguration()
+#if DEBUG
+                        .MinimumLevel.Debug()
+                        .MinimumLevel.Override("Microsoft", LogEventLevel.Debug)
+#else
+                        .MinimumLevel.Warning()
+                        .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+#endif
+                        .Enrich.FromLogContext()
+                        .Enrich.WithExceptionDetails()
+                        .WriteTo.Async(c => c.File("Logs/LogFile_.log", rollingInterval: RollingInterval.Day, shared: true))
+#if DEBUG
+                        .WriteTo.Async(c => c.Console())
+#endif
+                        .CreateLogger();
+
             var rootCommand = new RootCommand("Sort your photos into folders based on metadata.");
 
             var configOption = new Option<string>(new[] { "--config-path", "-c" },
@@ -62,20 +81,19 @@ namespace SortThing
                                                                                    services.AddScoped<IConfigService, ConfigService>();
                                                                                    services.AddSingleton<ISystemTime, SystemTime>();
                                                                                    services.AddSingleton<IGlobalState>(new GlobalState()
-                                                                                                                       {
-                                                                                                                           ConfigPath = configPath,
-                                                                                                                           DryRun = dryRun,
-                                                                                                                           JobName = jobName,
-                                                                                                                           Watch = watch,
-                                                                                                                           GenerateSample = generateSample
-                                                                                                                       });
+                                                                                   {
+                                                                                       ConfigPath = configPath,
+                                                                                       DryRun = dryRun,
+                                                                                       JobName = jobName,
+                                                                                       Watch = watch,
+                                                                                       GenerateSample = generateSample
+                                                                                   });
                                                                                    services.AddHostedService<SortBackgroundService>();
                                                                                })
                                                             .ConfigureLogging(builder =>
                                                                               {
                                                                                   builder.ClearProviders();
-                                                                                  builder.AddConsole();
-                                                                                  builder.AddProvider(new FileLoggerProvider());
+                                                                                  builder.AddSerilog(dispose: true);
                                                                               })
                                                             .Build();
 

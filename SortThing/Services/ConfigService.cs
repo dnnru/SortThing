@@ -27,22 +27,10 @@ namespace SortThing.Services
             _logger = logger;
         }
 
-        private string DefaultConfigPath
-        {
-            get
-            {
-                if (OperatingSystem.IsWindows())
-                {
-                    return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SortThing", "Config.json");
-                }
-                else
-                {
-                    return Path.Combine(Path.GetTempPath(), "SortThing", "Config.json");
-                }
-            }
-        }
+        private static string DefaultConfigPath =>
+            Path.Combine(Path.GetDirectoryName(Environment.ProcessPath) ?? throw new InvalidOperationException(), "Config.json");
 
-        private JsonSerializerOptions JsonSerializerOptions =>
+        private static JsonSerializerOptions JsonSerializerOptions =>
             new JsonSerializerOptions
             {
                 Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic),
@@ -51,25 +39,24 @@ namespace SortThing.Services
 
         public async Task GenerateSample()
         {
-            var config = new SortConfig()
+            var config = new SortConfig
                          {
                              Jobs = new[]
                                     {
-                                        new SortJob()
+                                        new SortJob
                                         {
-                                            Name = "Photos",
+                                            Name = "Images",
                                             Operation = SortOperation.Move,
                                             SourceDirectory = "D:\\Sync\\Camera\\",
                                             DestinationFile =
-                                                $"D:\\Sorted\\Photos\\{PathTransformer.YEAR}\\{PathTransformer.MONTH}\\{PathTransformer.DAY}\\{PathTransformer.CAMERA}\\{PathTransformer.HOUR}{PathTransformer.MINUTE} - {PathTransformer.FILENAME}.{PathTransformer.EXTENSION}",
-                                            NoExifDirectory = "D:\\Sorted\\NoExif\\Photos",
-                                            IncludeExtensions = new[] { "png", "jpg", "jpeg" },
-                                            ExcludeExtensions = Array.Empty<string>(),
+                                                $"D:\\Sorted\\Images\\{PathTransformer.YEAR}\\{PathTransformer.MONTH}\\{PathTransformer.DAY}\\{PathTransformer.CAMERA}\\{PathTransformer.HOUR}{PathTransformer.MINUTE} - {PathTransformer.FILENAME}.{PathTransformer.EXTENSION}",
+                                            NoExifDirectory = "D:\\Sorted\\NoExif\\Images",
+                                            IncludeExtensions = new[] { "png", "jpg", "jpeg", "mimetype: image/*" },
+                                            ExcludeExtensions = new[] { "djv", "djvu" },
                                             OverwriteAction = OverwriteAction.Overwrite,
                                             UseTimestamp = false
                                         },
-
-                                        new SortJob()
+                                        new SortJob
                                         {
                                             Name = "Videos",
                                             Operation = SortOperation.Move,
@@ -77,12 +64,11 @@ namespace SortThing.Services
                                             DestinationFile =
                                                 $"D:\\Sorted\\Videos\\{PathTransformer.YEAR}\\{PathTransformer.MONTH}\\{PathTransformer.DAY}\\{PathTransformer.CAMERA}\\{PathTransformer.HOUR}{PathTransformer.MINUTE} - {PathTransformer.FILENAME}.{PathTransformer.EXTENSION}",
                                             NoExifDirectory = "D:\\Sorted\\NoExif\\Videos",
-                                            IncludeExtensions = new[] { "mp4", "avi", "m4v", "mov" },
+                                            IncludeExtensions = new[] { "mp4", "avi", "m4v", "mov", "mimetype: video/*" },
                                             ExcludeExtensions = Array.Empty<string>(),
                                             OverwriteAction = OverwriteAction.New,
                                             UseTimestamp = false
                                         },
-
                                         new SortJob()
                                         {
                                             Name = "Others",
@@ -91,7 +77,11 @@ namespace SortThing.Services
                                             DestinationFile =
                                                 $"D:\\Sorted\\Files\\{PathTransformer.YEAR}\\{PathTransformer.MONTH}\\{PathTransformer.DAY}\\{PathTransformer.HOUR}{PathTransformer.MINUTE} - {PathTransformer.FILENAME}.{PathTransformer.EXTENSION}",
                                             IncludeExtensions = new[] { "*" },
-                                            ExcludeExtensions = new[] { "png", "jpg", "jpeg", "mp4", "avi", "m4v", "mov" },
+                                            ExcludeExtensions = new[]
+                                                                {
+                                                                    "png", "jpg", "jpeg", "mp4", "avi", "m4v", "mov", "mimetype: image/*",
+                                                                    "mimetype: video/*"
+                                                                },
                                             OverwriteAction = OverwriteAction.Skip,
                                             UseTimestamp = false
                                         }
@@ -145,9 +135,7 @@ namespace SortThing.Services
             var exeDir = Path.GetDirectoryName(Environment.CommandLine.Split(" ").First());
             var directory = _fileSystem.CreateDirectory(exeDir);
 
-            var jsonFiles = directory.GetFiles("*.json");
-
-            foreach (var file in jsonFiles)
+            foreach (var file in directory.GetFiles("*.json"))
             {
                 try
                 {
@@ -155,17 +143,18 @@ namespace SortThing.Services
                     var config = JsonSerializer.Deserialize<SortConfig>(content, JsonSerializerOptions);
                     if (config is not null)
                     {
-                        _logger.LogInformation("Found config file: {configPath}.", file.FullName);
+                        _logger.LogInformation("Found config file: {configPath}", file.FullName);
+                        Console.WriteLine($"Found config file: {file.FullName}");
                         return Result.Ok(file.FullName);
                     }
                 }
                 catch
                 {
-                    // ignored
+                    // ignore
                 }
             }
 
-            _logger.LogWarning("No config file was found in {exeDir}.", exeDir);
+            _logger.LogWarning("No config file was found in {exeDir}", exeDir);
             return Result.Fail<string>($"No config file was found in {exeDir}.");
         }
     }

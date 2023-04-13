@@ -16,7 +16,8 @@ namespace SortThing.Contracts
 
         Stream CreateFile(string filePath);
         bool FileExists(string path);
-        string[] GetFiles(string path, string searchPattern, EnumerationOptions enumOptions);
+        IEnumerable<string> GetFiles(string path, string searchPattern, EnumerationOptions enumOptions);
+        public IEnumerable<string> GetFiles(string path, IEnumerable<string> searchPatterns, EnumerationOptions enumOptions);
 
         void MoveFile(string sourceFile, string destinationFile, bool overwrite);
         string ReadAllText(string filePath);

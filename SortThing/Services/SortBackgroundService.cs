@@ -46,8 +46,6 @@ namespace SortThing.Services
             try
             {
                 var configPath = _globalState.ConfigPath;
-                var cts = new CancellationTokenSource();
-                var cancelToken = cts.Token;
 
                 if (_globalState.GenerateSample)
                 {
@@ -59,6 +57,7 @@ namespace SortThing.Services
                 if (string.IsNullOrWhiteSpace(configPath))
                 {
                     _logger.LogInformation("Config path not specified. Looking for config file in application directory");
+                    Console.WriteLine("Config path not specified. Looking for config file in application directory");
 
                     var result = await _configService.TryFindConfig().ConfigureAwait(false);
                     if (!result.IsSuccess)
@@ -73,6 +72,7 @@ namespace SortThing.Services
                 if (!_fileSystem.FileExists(configPath))
                 {
                     _logger.LogInformation("Config file not found at {configPath}", configPath);
+                    Console.WriteLine($"Config file not found at {configPath}");
                     _appLifetime.StopApplication();
                     return;
                 }
@@ -95,12 +95,14 @@ namespace SortThing.Services
                 }
 
                 _logger.LogInformation("Watching for changes...");
+                Console.WriteLine("Watching for changes...");
 
                 await _jobWatcher.WatchJobs(configPath, _globalState.DryRun, stoppingToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while starting background service");
+                Console.WriteLine(ex.Message);
             }
         }
     }

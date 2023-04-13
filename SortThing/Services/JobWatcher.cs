@@ -83,7 +83,7 @@ namespace SortThing.Services
                                       IncludeSubdirectories = true
                                   };
 
-                    foreach (var ext in job.IncludeExtensions)
+                    foreach (var ext in job.IncludeExtensionsExpanded)
                     {
                         watcher.Filters.Add($"*.{ext.Replace(".", "")}");
                     }

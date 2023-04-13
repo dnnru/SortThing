@@ -27,8 +27,7 @@ namespace SortThing.Services
             _logger = logger;
         }
 
-        private static string DefaultConfigPath =>
-            Path.Combine(Path.GetDirectoryName(Environment.ProcessPath) ?? throw new InvalidOperationException(), "Config.json");
+        private static string DefaultConfigPath => Path.Combine(Path.GetDirectoryName(Environment.ProcessPath) ?? throw new InvalidOperationException(), "Config.json");
 
         private static JsonSerializerOptions JsonSerializerOptions =>
             new JsonSerializerOptions
@@ -47,9 +46,11 @@ namespace SortThing.Services
                                         {
                                             Name = "Images",
                                             Operation = SortOperation.Move,
-                                            SourceDirectory = "D:\\Sync\\Camera\\",
+                                            SourceDirectory = "D:\\Sync\\Camera",
                                             DestinationFile =
                                                 $"D:\\Sorted\\Images\\{PathTransformer.YEAR}\\{PathTransformer.MONTH}\\{PathTransformer.DAY}\\{PathTransformer.CAMERA}\\{PathTransformer.HOUR}{PathTransformer.MINUTE} - {PathTransformer.FILENAME}.{PathTransformer.EXTENSION}",
+                                            DestinationNoExifFile =
+                                                $"D:\\Sorted\\NoExif\\Images\\{PathTransformer.YEAR}\\{PathTransformer.MONTH}\\{PathTransformer.DAY}\\{PathTransformer.HOUR}{PathTransformer.MINUTE} - {PathTransformer.FILENAME}.{PathTransformer.EXTENSION}",
                                             NoExifDirectory = "D:\\Sorted\\NoExif\\Images",
                                             IncludeExtensions = new[] { "png", "jpg", "jpeg", "mimetype: image/*" },
                                             ExcludeExtensions = new[] { "djv", "djvu" },
@@ -60,9 +61,11 @@ namespace SortThing.Services
                                         {
                                             Name = "Videos",
                                             Operation = SortOperation.Move,
-                                            SourceDirectory = "D:\\Sync\\Camera\\",
+                                            SourceDirectory = "D:\\Sync\\Camera",
                                             DestinationFile =
                                                 $"D:\\Sorted\\Videos\\{PathTransformer.YEAR}\\{PathTransformer.MONTH}\\{PathTransformer.DAY}\\{PathTransformer.CAMERA}\\{PathTransformer.HOUR}{PathTransformer.MINUTE} - {PathTransformer.FILENAME}.{PathTransformer.EXTENSION}",
+                                            DestinationNoExifFile =
+                                                $"D:\\Sorted\\NoExif\\Videos\\{PathTransformer.YEAR}\\{PathTransformer.MONTH}\\{PathTransformer.DAY}\\{PathTransformer.HOUR}{PathTransformer.MINUTE} - {PathTransformer.FILENAME}.{PathTransformer.EXTENSION}",
                                             NoExifDirectory = "D:\\Sorted\\NoExif\\Videos",
                                             IncludeExtensions = new[] { "mp4", "avi", "m4v", "mov", "mimetype: video/*" },
                                             ExcludeExtensions = Array.Empty<string>(),
@@ -73,7 +76,7 @@ namespace SortThing.Services
                                         {
                                             Name = "Others",
                                             Operation = SortOperation.Move,
-                                            SourceDirectory = "D:\\Sync\\Camera\\",
+                                            SourceDirectory = "D:\\Sync\\Camera",
                                             DestinationFile =
                                                 $"D:\\Sorted\\Files\\{PathTransformer.YEAR}\\{PathTransformer.MONTH}\\{PathTransformer.DAY}\\{PathTransformer.HOUR}{PathTransformer.MINUTE} - {PathTransformer.FILENAME}.{PathTransformer.EXTENSION}",
                                             IncludeExtensions = new[] { "*" },

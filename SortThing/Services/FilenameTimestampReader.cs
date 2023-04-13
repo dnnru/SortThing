@@ -19,7 +19,7 @@ namespace SortThing.Services
             DateTime dateTaken;
             try
             {
-                dateTaken = File.GetLastAccessTimeUtc(filePath);
+                dateTaken = File.GetLastWriteTime(filePath);
             }
             catch (Exception e)
             {

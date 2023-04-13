@@ -15,6 +15,7 @@ namespace SortThing.Models
     public class SortJob
     {
         public string DestinationFile { get; init; } = string.Empty;
+        public string DestinationNoExifFile { get; init; } = string.Empty;
         public string NoExifDirectory { get; init; } = string.Empty;
 
         public string[] ExcludeExtensions { get; init; } = Array.Empty<string>();

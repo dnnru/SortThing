@@ -176,8 +176,7 @@ namespace SortThing.Services
                 }
                 else if (timestampResult is { IsSuccess: true } && timestampResult.Value != DateTime.MinValue)
                 {
-                    exifFound = true;
-                    destinationFile = _pathTransformer.TransformPath(file, job.DestinationFile, timestampResult.Value);
+                    destinationFile = _pathTransformer.TransformPath(file, job.DestinationNoExifFile, timestampResult.Value);
                 }
                 else
                 {

@@ -5,11 +5,10 @@ using SortThing.Models;
 
 #endregion
 
-namespace SortThing.Contracts
+namespace SortThing.Contracts;
+
+public interface IMetadataReader
 {
-    public interface IMetadataReader
-    {
-        Result<DateTime> ParseExifDateTime(string exifDateTime);
-        Result<ExifData> TryGetExifData(string filePath);
-    }
+    Result<DateTime> ParseExifDateTime(string exifDateTime);
+    Result<ExifData> TryGetExifData(string filePath);
 }

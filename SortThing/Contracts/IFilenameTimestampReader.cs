@@ -5,10 +5,9 @@ using SortThing.Models;
 
 #endregion
 
-namespace SortThing.Contracts
+namespace SortThing.Contracts;
+
+public interface IFilenameTimestampReader
 {
-    public interface IFilenameTimestampReader
-    {
-        Result<DateTime> GetFilenameTimestamp(string filePath);
-    }
+    Result<DateTime> GetFilenameTimestamp(string filePath);
 }

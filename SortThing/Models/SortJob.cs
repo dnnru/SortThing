@@ -10,44 +10,44 @@ using SortThing.Utilities;
 
 #endregion
 
-namespace SortThing.Models
+namespace SortThing.Models;
+
+public class SortJob
 {
-    public class SortJob
+    public string DestinationFile { get; init; } = string.Empty;
+    public string DestinationNoExifFile { get; init; } = string.Empty;
+    public string NoExifDirectory { get; init; } = string.Empty;
+
+    public string[] ExcludeExtensions { get; init; } = Array.Empty<string>();
+
+    [JsonIgnore]
+    public string[] ExcludeExtensionsExpanded => GetExtensionsByMimeType(ExcludeExtensions);
+
+    public string[] IncludeExtensions { get; init; } = Array.Empty<string>();
+
+    [JsonIgnore]
+    public string[] IncludeExtensionsExpanded => GetExtensionsByMimeType(IncludeExtensions);
+
+    public string Name { get; init; } = string.Empty;
+
+    /// <summary>
+    ///     The operation to perform on the original files.
+    /// </summary>
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public SortOperation Operation { get; init; }
+
+    /// <summary>
+    ///     The action to take when destination file already exists.
+    /// </summary>
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public OverwriteAction OverwriteAction { get; init; }
+
+    public string SourceDirectory { get; init; } = string.Empty;
+
+    public bool UseTimestamp { get; init; }
+
+    private string[] GetExtensionsByMimeType(string[] extensions)
     {
-        public string DestinationFile { get; init; } = string.Empty;
-        public string DestinationNoExifFile { get; init; } = string.Empty;
-        public string NoExifDirectory { get; init; } = string.Empty;
-
-        public string[] ExcludeExtensions { get; init; } = Array.Empty<string>();
-
-        [JsonIgnore]
-        public string[] ExcludeExtensionsExpanded => GetExtensionsByMimeType(ExcludeExtensions);
-
-        public string[] IncludeExtensions { get; init; } = Array.Empty<string>();
-
-        [JsonIgnore]
-        public string[] IncludeExtensionsExpanded => GetExtensionsByMimeType(IncludeExtensions);
-
-        public string Name { get; init; } = string.Empty;
-
-        /// <summary>
-        ///     The operation to perform on the original files.
-        /// </summary>
-        [JsonConverter(typeof(JsonStringEnumConverter))]
-        public SortOperation Operation { get; init; }
-
-        /// <summary>
-        ///     The action to take when destination file already exists.
-        /// </summary>
-        [JsonConverter(typeof(JsonStringEnumConverter))]
-        public OverwriteAction OverwriteAction { get; init; }
-
-        public string SourceDirectory { get; init; } = string.Empty;
-
-        public bool UseTimestamp { get; init; }
-
-        private string[] GetExtensionsByMimeType(string[] extensions)
-        {
             var result = new List<string>(extensions);
             var mimetypes = extensions.Where(e => e.Trim().IndexOf("mimetype", 0, StringComparison.InvariantCultureIgnoreCase) >= 0).ToList();
             result.RemoveAll(str => mimetypes.Contains(str));
@@ -66,5 +66,4 @@ namespace SortThing.Models
 
             return result.Distinct().ToArray();
         }
-    }
 }

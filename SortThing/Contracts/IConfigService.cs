@@ -5,13 +5,12 @@ using SortThing.Models;
 
 #endregion
 
-namespace SortThing.Contracts
+namespace SortThing.Contracts;
+
+public interface IConfigService
 {
-    public interface IConfigService
-    {
-        Task<SortConfig> GetConfig(string configPath);
-        Task<SortConfig> GetSortConfig();
-        Task<Result<string>> TryFindConfig();
-        Task GenerateSample();
-    }
+    Task<SortConfig> GetConfig(string configPath);
+    Task<SortConfig> GetSortConfig();
+    Task<Result<string>> TryFindConfig();
+    Task GenerateSample();
 }

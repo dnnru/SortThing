@@ -1,9 +1,8 @@
-﻿namespace SortThing.Enums
+﻿namespace SortThing.Enums;
+
+public enum OverwriteAction
 {
-    public enum OverwriteAction
-    {
-        Skip,
-        New,
-        Overwrite
-    }
+    Skip,
+    New,
+    Overwrite
 }

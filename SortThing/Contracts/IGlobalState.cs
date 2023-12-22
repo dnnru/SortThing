@@ -1,11 +1,10 @@
-﻿namespace SortThing.Contracts
+﻿namespace SortThing.Contracts;
+
+public interface IGlobalState
 {
-    public interface IGlobalState
-    {
-        string ConfigPath { get; init; }
-        bool DryRun { get; init; }
-        bool GenerateSample { get; init; }
-        string JobName { get; init; }
-        bool Watch { get; init; }
-    }
+    string ConfigPath { get; init; }
+    bool DryRun { get; init; }
+    bool GenerateSample { get; init; }
+    string JobName { get; init; }
+    bool Watch { get; init; }
 }

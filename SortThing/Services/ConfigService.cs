@@ -14,30 +14,30 @@ using SortThing.Models;
 
 #endregion
 
-namespace SortThing.Services
-{
-    public class ConfigService : IConfigService
-    {
-        private readonly IFileSystem _fileSystem;
-        private readonly ILogger<ConfigService> _logger;
+namespace SortThing.Services;
 
-        public ConfigService(IFileSystem fileSystem, ILogger<ConfigService> logger)
-        {
+public class ConfigService : IConfigService
+{
+    private readonly IFileSystem _fileSystem;
+    private readonly ILogger<ConfigService> _logger;
+
+    public ConfigService(IFileSystem fileSystem, ILogger<ConfigService> logger)
+    {
             _fileSystem = fileSystem;
             _logger = logger;
         }
 
-        private static string DefaultConfigPath => Path.Combine(Path.GetDirectoryName(Environment.ProcessPath) ?? throw new InvalidOperationException(), "Config.json");
+    private static string DefaultConfigPath => Path.Combine(Path.GetDirectoryName(Environment.ProcessPath) ?? throw new InvalidOperationException(), "Config.json");
 
-        private static JsonSerializerOptions JsonSerializerOptions =>
-            new JsonSerializerOptions
-            {
-                Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic),
-                WriteIndented = true
-            };
-
-        public async Task GenerateSample()
+    private static JsonSerializerOptions JsonSerializerOptions =>
+        new JsonSerializerOptions
         {
+            Encoder = JavaScriptEncoder.Create(UnicodeRanges.BasicLatin, UnicodeRanges.Cyrillic),
+            WriteIndented = true
+        };
+
+    public async Task GenerateSample()
+    {
             var config = new SortConfig
                          {
                              Jobs = new[]
@@ -103,8 +103,8 @@ namespace SortThing.Services
             }
         }
 
-        public async Task<SortConfig> GetConfig(string configPath)
-        {
+    public async Task<SortConfig> GetConfig(string configPath)
+    {
             if (string.IsNullOrWhiteSpace(configPath))
             {
                 throw new ArgumentNullException(nameof(configPath));
@@ -119,8 +119,8 @@ namespace SortThing.Services
             return JsonSerializer.Deserialize<SortConfig>(configString, JsonSerializerOptions) ?? new SortConfig();
         }
 
-        public async Task<SortConfig> GetSortConfig()
-        {
+    public async Task<SortConfig> GetSortConfig()
+    {
             try
             {
                 return await GetConfig(DefaultConfigPath).ConfigureAwait(false);
@@ -133,8 +133,8 @@ namespace SortThing.Services
             return new SortConfig();
         }
 
-        public async Task<Result<string>> TryFindConfig()
-        {
+    public async Task<Result<string>> TryFindConfig()
+    {
             var exeDir = Path.GetDirectoryName(Environment.CommandLine.Split(" ").First());
             var directory = _fileSystem.CreateDirectory(exeDir);
 
@@ -160,5 +160,4 @@ namespace SortThing.Services
             _logger.LogWarning("No config file was found in {exeDir}", exeDir);
             return Result.Fail<string>($"No config file was found in {exeDir}.");
         }
-    }
 }

@@ -5,11 +5,10 @@ using System.Threading.Tasks;
 
 #endregion
 
-namespace SortThing.Contracts
+namespace SortThing.Contracts;
+
+public interface IJobWatcher
 {
-    public interface IJobWatcher
-    {
-        Task CancelWatchers();
-        Task WatchJobs(string configPath, bool dryRun, CancellationToken cancelToken);
-    }
+    Task CancelWatchers();
+    Task WatchJobs(string configPath, bool dryRun, CancellationToken cancelToken);
 }

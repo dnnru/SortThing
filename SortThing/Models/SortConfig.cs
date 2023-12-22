@@ -1,7 +1,6 @@
-﻿namespace SortThing.Models
+﻿namespace SortThing.Models;
+
+public class SortConfig
 {
-    public class SortConfig
-    {
-        public SortJob[] Jobs { get; init; }
-    }
+    public SortJob[] Jobs { get; init; }
 }

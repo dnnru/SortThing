@@ -10,12 +10,12 @@ using SortThing.Models;
 
 #endregion
 
-namespace SortThing.Services
+namespace SortThing.Services;
+
+public class FilenameTimestampReader : IFilenameTimestampReader
 {
-    public class FilenameTimestampReader : IFilenameTimestampReader
+    public Result<DateTime> GetFilenameTimestamp(string filePath)
     {
-        public Result<DateTime> GetFilenameTimestamp(string filePath)
-        {
             DateTime dateTaken;
             try
             {
@@ -101,9 +101,9 @@ namespace SortThing.Services
             return Result.Ok(dateTaken);
         }
 
-        //Try parsing timestamp like this: "20211031155822"
-        private static bool TryParseFilenameTimestampDateTime(string timestamp, out DateTime dateTaken)
-        {
+    //Try parsing timestamp like this: "20211031155822"
+    private static bool TryParseFilenameTimestampDateTime(string timestamp, out DateTime dateTaken)
+    {
             if (string.IsNullOrWhiteSpace(timestamp) || timestamp.Length < 14 || !timestamp.All(char.IsDigit))
             {
                 dateTaken = default;
@@ -129,5 +129,4 @@ namespace SortThing.Services
 
             return true;
         }
-    }
 }

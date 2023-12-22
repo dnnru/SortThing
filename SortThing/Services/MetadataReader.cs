@@ -16,19 +16,19 @@ using Directory = MetadataExtractor.Directory;
 
 #endregion
 
-namespace SortThing.Services
-{
-    public class MetadataReader : IMetadataReader
-    {
-        private readonly ConcurrentDictionary<string, IReadOnlyList<Directory>> _directoriesDictionary = new ConcurrentDictionary<string, IReadOnlyList<Directory>>();
+namespace SortThing.Services;
 
-        /// <summary>
-        ///     Formats an EXIF DateTime to a format that can be parsed in .NET.
-        /// </summary>
-        /// <param name="exifDateTime"></param>
-        /// <returns></returns>
-        public Result<DateTime> ParseExifDateTime(string exifDateTime)
-        {
+public class MetadataReader : IMetadataReader
+{
+    private readonly ConcurrentDictionary<string, IReadOnlyList<Directory>> _directoriesDictionary = new ConcurrentDictionary<string, IReadOnlyList<Directory>>();
+
+    /// <summary>
+    ///     Formats an EXIF DateTime to a format that can be parsed in .NET.
+    /// </summary>
+    /// <param name="exifDateTime"></param>
+    /// <returns></returns>
+    public Result<DateTime> ParseExifDateTime(string exifDateTime)
+    {
             if (string.IsNullOrWhiteSpace(exifDateTime))
             {
                 return Result.Fail<DateTime>($"Parameter {nameof(exifDateTime)} cannot be empty.");
@@ -44,8 +44,8 @@ namespace SortThing.Services
             return !DateTime.TryParse(string.Join(' ', dateArray), out var dateTaken) ? Result.Fail<DateTime>("Unable to parse DateTime metadata value.") : Result.Ok(dateTaken);
         }
 
-        public Result<ExifData> TryGetExifData(string filePath)
-        {
+    public Result<ExifData> TryGetExifData(string filePath)
+    {
             try
             {
                 if (!File.Exists(filePath))
@@ -74,9 +74,9 @@ namespace SortThing.Services
             }
         }
 
-        // ReSharper disable once UnusedMethodReturnValue.Local
-        private bool TryGetLocation(string filePath, out (double Latitude, double Longitude)? location)
-        {
+    // ReSharper disable once UnusedMethodReturnValue.Local
+    private bool TryGetLocation(string filePath, out (double Latitude, double Longitude)? location)
+    {
             location = null;
             if (!TryGetExifDirectory<GpsDirectory>(filePath, out var gpsDirectory))
             {
@@ -94,9 +94,9 @@ namespace SortThing.Services
             return true;
         }
 
-        // ReSharper disable once UnusedMethodReturnValue.Local
-        private bool TryGetCameraModel(string filePath, out string camera)
-        {
+    // ReSharper disable once UnusedMethodReturnValue.Local
+    private bool TryGetCameraModel(string filePath, out string camera)
+    {
             camera = string.Empty;
 
             if (!TryGetExifDirectory<ExifIfd0Directory>(filePath, out var directory))
@@ -115,8 +115,8 @@ namespace SortThing.Services
             return !string.IsNullOrWhiteSpace(camera);
         }
 
-        private bool TryGetDateTime(string filePath, out DateTime dateTaken)
-        {
+    private bool TryGetDateTime(string filePath, out DateTime dateTaken)
+    {
             dateTaken = default;
 
             if (!TryGetExifDirectory<ExifSubIfdDirectory>(filePath, out var directory))
@@ -139,14 +139,14 @@ namespace SortThing.Services
                 || directory.TryGetDateTime(ExifDirectoryBase.TagDateTime, out dateTaken);
         }
 
-        private bool TryGetExifDirectory<T>(string filePath, out T directory) where T : class
-        {
+    private bool TryGetExifDirectory<T>(string filePath, out T directory) where T : class
+    {
             directory = _directoriesDictionary.GetOrAdd(filePath, ReadMetadata)?.OfType<T>().FirstOrDefault();
             return directory is not null;
         }
 
-        private static IReadOnlyList<Directory> ReadMetadata(string filePath)
-        {
+    private static IReadOnlyList<Directory> ReadMetadata(string filePath)
+    {
             IReadOnlyList<Directory> directories = null;
             try
             {
@@ -159,5 +159,4 @@ namespace SortThing.Services
 
             return directories;
         }
-    }
 }

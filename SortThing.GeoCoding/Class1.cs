@@ -1,7 +1,6 @@
-﻿namespace SortThing.GeoCoding
-{
-    public class Class1
-    {
+﻿namespace SortThing.GeoCoding;
 
-    }
+public class Class1
+{
+
 }

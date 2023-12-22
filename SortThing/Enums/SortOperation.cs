@@ -1,9 +1,8 @@
-﻿namespace SortThing.Enums
+﻿namespace SortThing.Enums;
+
+public enum SortOperation
 {
-    public enum SortOperation
-    {
-        Unknown,
-        Move,
-        Copy
-    }
+    Unknown,
+    Move,
+    Copy
 }

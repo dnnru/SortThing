@@ -4,10 +4,9 @@ using System;
 
 #endregion
 
-namespace SortThing.Contracts
+namespace SortThing.Contracts;
+
+public interface ISystemTime
 {
-    public interface ISystemTime
-    {
-        DateTimeOffset Now { get; }
-    }
+    DateTimeOffset Now { get; }
 }

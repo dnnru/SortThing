@@ -16,34 +16,34 @@ using SortThing.Utilities;
 
 #endregion
 
-namespace SortThing.Services
+namespace SortThing.Services;
+
+public class JobRunner : IJobRunner
 {
-    public class JobRunner : IJobRunner
+    private static readonly SemaphoreSlim RunLock = new SemaphoreSlim(1, 1);
+    private readonly IConfigService _configService;
+
+    private readonly EnumerationOptions _enumOptions = new EnumerationOptions
     {
-        private static readonly SemaphoreSlim RunLock = new SemaphoreSlim(1, 1);
-        private readonly IConfigService _configService;
+        AttributesToSkip =
+            FileAttributes.ReparsePoint | FileAttributes.Hidden | FileAttributes.System,
+        RecurseSubdirectories = true,
+        MatchCasing = MatchCasing.PlatformDefault
+    };
 
-        private readonly EnumerationOptions _enumOptions = new EnumerationOptions
-                                                           {
-                                                               AttributesToSkip =
-                                                                   FileAttributes.ReparsePoint | FileAttributes.Hidden | FileAttributes.System,
-                                                               RecurseSubdirectories = true,
-                                                               MatchCasing = MatchCasing.PlatformDefault
-                                                           };
+    private readonly IFilenameTimestampReader _filenameTimestampReader;
+    private readonly IFileSystem _fileSystem;
+    private readonly ILogger<JobRunner> _logger;
+    private readonly IMetadataReader _metaDataReader;
+    private readonly IPathTransformer _pathTransformer;
 
-        private readonly IFilenameTimestampReader _filenameTimestampReader;
-        private readonly IFileSystem _fileSystem;
-        private readonly ILogger<JobRunner> _logger;
-        private readonly IMetadataReader _metaDataReader;
-        private readonly IPathTransformer _pathTransformer;
-
-        public JobRunner(IFileSystem fileSystem,
-                         IMetadataReader metaDataReader,
-                         IFilenameTimestampReader filenameTimestampReader,
-                         IPathTransformer pathTransformer,
-                         IConfigService configService,
-                         ILogger<JobRunner> logger)
-        {
+    public JobRunner(IFileSystem fileSystem,
+        IMetadataReader metaDataReader,
+        IFilenameTimestampReader filenameTimestampReader,
+        IPathTransformer pathTransformer,
+        IConfigService configService,
+        ILogger<JobRunner> logger)
+    {
             _fileSystem = fileSystem;
             _metaDataReader = metaDataReader;
             _filenameTimestampReader = filenameTimestampReader;
@@ -52,8 +52,8 @@ namespace SortThing.Services
             _logger = logger;
         }
 
-        public async Task<JobReport> RunJob(SortJob job, bool dryRun, CancellationToken cancelToken)
-        {
+    public async Task<JobReport> RunJob(SortJob job, bool dryRun, CancellationToken cancelToken)
+    {
             var jobReport = new JobReport()
                             {
                                 JobName = job.Name,
@@ -125,8 +125,8 @@ namespace SortThing.Services
             return jobReport;
         }
 
-        public async Task<JobReport> RunJob(string configPath, string jobName, bool dryRun, CancellationToken cancelToken)
-        {
+    public async Task<JobReport> RunJob(string configPath, string jobName, bool dryRun, CancellationToken cancelToken)
+    {
             var config = await _configService.GetConfig(configPath).ConfigureAwait(false);
             var job = config.Jobs?.FirstOrDefault(x => x.Name?.Equals(jobName, StringComparison.OrdinalIgnoreCase) ?? false);
 
@@ -144,8 +144,8 @@ namespace SortThing.Services
             return await RunJob(job, dryRun, cancelToken).ConfigureAwait(false);
         }
 
-        public async Task<List<JobReport>> RunJobs(string configPath, bool dryRun, CancellationToken cancelToken)
-        {
+    public async Task<List<JobReport>> RunJobs(string configPath, bool dryRun, CancellationToken cancelToken)
+    {
             var config = await _configService.GetConfig(configPath).ConfigureAwait(false);
             var reports = new List<JobReport>();
 
@@ -158,8 +158,8 @@ namespace SortThing.Services
             return reports;
         }
 
-        private Task<OperationResult> PerformFileOperation(SortJob job, bool dryRun, string file)
-        {
+    private Task<OperationResult> PerformFileOperation(SortJob job, bool dryRun, string file)
+    {
             OperationResult operationResult;
             var exifFound = false;
             var destinationFile = string.Empty;
@@ -264,5 +264,4 @@ namespace SortThing.Services
 
             return Task.FromResult(operationResult);
         }
-    }
 }

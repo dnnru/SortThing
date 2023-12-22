@@ -15,26 +15,26 @@ using SortThing.Utilities;
 
 #endregion
 
-namespace SortThing.Services
-{
-    public class JobWatcher : IJobWatcher
-    {
-        private readonly ConcurrentDictionary<object, SemaphoreSlim> _jobRunLocks = new ConcurrentDictionary<object, SemaphoreSlim>();
-        private readonly IJobRunner _jobRunner;
-        private readonly ILogger<JobWatcher> _logger;
-        private readonly IReportWriter _reportWriter;
-        private readonly List<FileSystemWatcher> _watchers = new List<FileSystemWatcher>();
-        private readonly SemaphoreSlim _watchersLock = new SemaphoreSlim(1, 1);
+namespace SortThing.Services;
 
-        public JobWatcher(IJobRunner jobRunner, IReportWriter reportWriter, ILogger<JobWatcher> logger)
-        {
+public class JobWatcher : IJobWatcher
+{
+    private readonly ConcurrentDictionary<object, SemaphoreSlim> _jobRunLocks = new ConcurrentDictionary<object, SemaphoreSlim>();
+    private readonly IJobRunner _jobRunner;
+    private readonly ILogger<JobWatcher> _logger;
+    private readonly IReportWriter _reportWriter;
+    private readonly List<FileSystemWatcher> _watchers = new List<FileSystemWatcher>();
+    private readonly SemaphoreSlim _watchersLock = new SemaphoreSlim(1, 1);
+
+    public JobWatcher(IJobRunner jobRunner, IReportWriter reportWriter, ILogger<JobWatcher> logger)
+    {
             _jobRunner = jobRunner;
             _reportWriter = reportWriter;
             _logger = logger;
         }
 
-        public Task CancelWatchers()
-        {
+    public Task CancelWatchers()
+    {
             foreach (var watcher in _watchers)
             {
                 try
@@ -54,8 +54,8 @@ namespace SortThing.Services
             return Task.CompletedTask;
         }
 
-        public async Task WatchJobs(string configPath, bool dryRun, CancellationToken cancelToken)
-        {
+    public async Task WatchJobs(string configPath, bool dryRun, CancellationToken cancelToken)
+    {
             try
             {
                 await _watchersLock.WaitAsync(cancelToken).ConfigureAwait(false);
@@ -101,8 +101,8 @@ namespace SortThing.Services
             }
         }
 
-        private async Task RunJob(Guid jobKey, SortJob job, bool dryRun, CancellationToken cancelToken)
-        {
+    private async Task RunJob(Guid jobKey, SortJob job, bool dryRun, CancellationToken cancelToken)
+    {
             var jobRunLock = _jobRunLocks.GetOrAdd(jobKey, _ => new SemaphoreSlim(1, 1));
 
             if (!await jobRunLock.WaitAsync(0, cancelToken).ConfigureAwait(false))
@@ -125,5 +125,4 @@ namespace SortThing.Services
 
             Debouncer.Debounce(jobKey, TimeSpan.FromSeconds(5), Action);
         }
-    }
 }

@@ -6,12 +6,11 @@ using SortThing.Models;
 
 #endregion
 
-namespace SortThing.Contracts
-{
-    public interface IReportWriter
-    {
-        Task<string> WriteReport(JobReport report);
+namespace SortThing.Contracts;
 
-        Task<string> WriteReports(IEnumerable<JobReport> reports);
-    }
+public interface IReportWriter
+{
+    Task<string> WriteReport(JobReport report);
+
+    Task<string> WriteReports(IEnumerable<JobReport> reports);
 }

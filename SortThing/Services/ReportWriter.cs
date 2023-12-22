@@ -10,30 +10,30 @@ using SortThing.Models;
 
 #endregion
 
-namespace SortThing.Services
-{
-    public class ReportWriter : IReportWriter
-    {
-        private readonly IFileSystem _fileSystem;
-        private readonly ILogger<ReportWriter> _logger;
-        private readonly ISystemTime _systemTime;
+namespace SortThing.Services;
 
-        public ReportWriter(ISystemTime systemTime, IFileSystem fileSystem, ILogger<ReportWriter> logger)
-        {
+public class ReportWriter : IReportWriter
+{
+    private readonly IFileSystem _fileSystem;
+    private readonly ILogger<ReportWriter> _logger;
+    private readonly ISystemTime _systemTime;
+
+    public ReportWriter(ISystemTime systemTime, IFileSystem fileSystem, ILogger<ReportWriter> logger)
+    {
             _systemTime = systemTime;
             _fileSystem = fileSystem;
             _logger = logger;
         }
 
-        public async Task<string> WriteReport(JobReport report)
-        {
+    public async Task<string> WriteReport(JobReport report)
+    {
             var logPath = GetLogPath();
             await WriteReportInternal(report, logPath).ConfigureAwait(false);
             return logPath;
         }
 
-        public async Task<string> WriteReports(IEnumerable<JobReport> reports)
-        {
+    public async Task<string> WriteReports(IEnumerable<JobReport> reports)
+    {
             var logPath = GetLogPath();
             foreach (var report in reports)
             {
@@ -43,15 +43,15 @@ namespace SortThing.Services
             return logPath;
         }
 
-        private string GetLogPath()
-        {
+    private string GetLogPath()
+    {
             var logPath = Path.Combine(Path.GetDirectoryName(Environment.ProcessPath) ?? throw new InvalidOperationException(), "Logs", $"JobReport_{_systemTime.Now:yyyy-MM-dd HH.mm.ss.fff}.log");
             _fileSystem.CreateDirectory(Path.GetDirectoryName(logPath));
             return logPath;
         }
 
-        private async Task WriteReportInternal(JobReport report, string logPath)
-        {
+    private async Task WriteReportInternal(JobReport report, string logPath)
+    {
             try
             {
                 _fileSystem.CreateDirectory(Path.GetDirectoryName(logPath) ?? "");
@@ -147,5 +147,4 @@ namespace SortThing.Services
                 _logger.LogError(ex, "Error writing SortThing report");
             }
         }
-    }
 }

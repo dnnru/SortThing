@@ -18,7 +18,7 @@ namespace SortThing;
 
 public class Program
 {
-    public static async Task<int> Main(string[] args)
+    public static Task<int> Main(string[] args)
     {
         Log.Logger = new LoggerConfiguration()
 #if DEBUG
@@ -105,6 +105,6 @@ public class Program
             dryRunOption,
             generateOption);
 
-        return await rootCommand.InvokeAsync(args).ConfigureAwait(false);
+        return rootCommand.InvokeAsync(args);
     }
 }
